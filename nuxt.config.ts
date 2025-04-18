@@ -2,5 +2,8 @@
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/icon']
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/icon'],
+  devServer: {
+    port: 3327
+  }
 })
