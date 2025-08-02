@@ -3,11 +3,14 @@ export default defineNuxtConfig({
   ssr: false,
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
+  experimental: {
+    viewTransition: true
+  },
   modules: [
+    'nuxt-vuefire',
     '@nuxt/eslint',
     '@nuxt/ui',
     '@nuxt/icon',
-    'nuxt-vuefire'
   ],
   css: ['~/assets/css/main.css'],
   devServer: {

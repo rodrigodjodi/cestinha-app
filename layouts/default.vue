@@ -1,5 +1,10 @@
+<script setup lang="ts">
+
+</script>
+
 <template>
-    <div>
+    <UContainer class="py-8 max-w-4xl mx-auto">
+        
         <slot />
-    </div>
+    </UContainer>
 </template>
