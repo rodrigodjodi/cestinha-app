@@ -8,9 +8,7 @@ export default defineNuxtConfig({
   },
   modules: [
     'nuxt-vuefire',
-    '@nuxt/eslint',
-    '@nuxt/ui',
-    '@nuxt/icon',
+    '@nuxt/ui'
   ],
   css: ['~/assets/css/main.css'],
   devServer: {
