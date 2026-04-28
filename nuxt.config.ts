@@ -6,10 +6,7 @@ export default defineNuxtConfig({
   experimental: {
     viewTransition: true
   },
-  modules: [
-    'nuxt-vuefire',
-    '@nuxt/ui'
-  ],
+  modules: ['nuxt-vuefire', '@nuxt/ui', '@pinia/nuxt'],
   css: ['~/assets/css/main.css'],
   devServer: {
     port: 3327

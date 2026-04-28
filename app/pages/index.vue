@@ -26,7 +26,7 @@ definePageMeta({
           <li>Veja o desempenho de cada jogador</li>
         </ul>
         <div class="space-x-4">
-          <UButton to="/login" color="primary" size="lg">Entrar</UButton>
+          <UButton to="/entrar" color="primary" size="lg">Entrar</UButton>
           <UButton to="/registrar" variant="outline" size="lg">Criar conta</UButton>
         </div>
       </div>
