@@ -2,11 +2,16 @@
 import { ref, computed } from 'vue'
 import { useCurrentUser } from 'vuefire'
 import { collection, query, where, addDoc, doc, setDoc, getDocs } from 'firebase/firestore'
+// middleware
+definePageMeta({
+  middleware: 'auth'
+})
+
 // composables
 const user = useCurrentUser()
 const db = useFirestore()
 const pageTitle = useState('pageTitle')
-pageTitle.value = 'Painel do usuário'
+pageTitle.value = 'Painel de ' + user.value?.displayName
 const mostrarModalCriarGrupo = ref(false)
 
 useHead({title: 'Painel do usuário'}) // esse título para a aba do navegador: Meus Grupos - Cestinha
@@ -42,6 +47,7 @@ async function buscaGruposDosJogadores(jogadores: any[]) {
 watch(user, async (newUser) => {
   if (!newUser) return
   carregando.value = true
+  console.log(user)
   try {
     jogadores.value = await buscaJogadoresDoUsuario()
     grupos.value = await buscaGruposDosJogadores(jogadores.value)
@@ -56,7 +62,7 @@ const NovoGrupo = defineAsyncComponent(() => import('@/components/Dialogs/Novogr
 
 <template>
   <UContainer class="py-8 max-w-4xl mx-auto">
-    <TheHeader />
+    
     
     <p>Perfil</p>
     <p>Grupos</p>

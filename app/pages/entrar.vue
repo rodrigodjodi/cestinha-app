@@ -1,68 +1,24 @@
 <script setup lang="ts">
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import type { AuthError } from 'firebase/auth'
-import type { FormSubmitEvent } from '@nuxt/ui'
 import { useFirebaseAuth } from 'vuefire'
-import { usuarioSchema } from '~/schemas/usuario'
-import type { Usuario } from '~/schemas/usuario'
+import { loginSchema } from '~/schemas/auth.schema'
 // defines, emits, props, injections
 definePageMeta({ layout: 'login'})
 
 // composables
 const auth = useFirebaseAuth()
-const toast = useToast()
-
+//stores
+const usuarioStore = useUsuarioStore()
 // state
-const carregando = ref(false)
-const formState = reactive<Partial<Usuario>>({
-  email: undefined,
-  senha: undefined
-})
+const { carregando, loginFormState } = storeToRefs(usuarioStore)
+// actions
+const {entrar} = usuarioStore
 
-async function entrar(event: FormSubmitEvent<LoginSchema>) {
-  console.log('Formulário enviado com dados:', event.data)
-  if (!auth) {
-    toast.add({
-      title: 'Erro',
-      description: 'Firebase Auth não disponível. Tente novamente mais tarde.',
-      color: 'error',
-    })
-    throw new Error('Firebase Auth não disponível')
-  }
-  try {
-    carregando.value = true
-    await signInWithEmailAndPassword(auth, event.data.email, event.data.senha)
-    navigateTo('/grupos')
-  } catch (e) {
-    console.error(e)
-    console.log(e.code)
-    switch (e.code) {
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
-      case 'auth/invalid-credential':
-        toast.add({
-        title: 'Erro',
-        description: 'E-amil ou senha inválidos.',
-        color: 'error',
-      })
-        break
-      default:
-        console.error('Erro ao entrar:', (e as AuthError).code, )
-        toast.add({
-          title: 'Erro',
-          description: 'Ocorreu um erro ao tentar entrar. Tente novamente mais tarde.',
-          color: 'error',
-        })
-    }
-  } finally {
-    carregando.value = false
-  }
-}
+
 
 onMounted(() => {
   if (auth && auth.currentUser) {
     carregando.value = true
-    navigateTo('/grupos')
+    navigateTo('/painel')
   }
   carregando.value = false
 })
@@ -70,6 +26,10 @@ onMounted(() => {
 onUnmounted(() => {
   console.log('Componente de login desmontado')
 })
+function handleFormError(errors: any) {
+  console.error('Erros de validação:', errors)
+  
+}
 </script>
 
 <template>
@@ -80,16 +40,16 @@ onUnmounted(() => {
         <h2 class="text-xl font-bold">Entrar</h2>
       </template>
 
-      <UForm :state="state" :schema="loginSchema" @submit.prevent="entrar">
+      <UForm :state="loginFormState" :schema="loginSchema" @submit.prevent="entrar" @error="handleFormError">
         <UFormField label="Email" name="email" class="mb-4">
-          <UInput v-model="state.email" placeholder="voce@email.com" />
+          <UInput v-model="loginFormState.email" placeholder="voce@email.com" />
         </UFormField>
 
         <UFormField label="Senha" name="senha" class="mb-6">
-          <UInput v-model="state.senha" type="password" placeholder="Sua senha"  />
+          <UInput v-model="loginFormState.senha" type="password" placeholder="Sua senha"  />
         </UFormField>
 
-        <UButton type="submit" :loading="carregando" class="w-full">
+        <UButton type="submit" :loading="carregando" class="w-full" >
           Entrar
         </UButton>
       </UForm>

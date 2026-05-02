@@ -3,8 +3,8 @@
 </script>
 
 <template>
-    <UContainer class="py-8 max-w-4xl mx-auto">
-        
+    <UContainer>
+        <TheHeader />
         <slot />
     </UContainer>
 </template>

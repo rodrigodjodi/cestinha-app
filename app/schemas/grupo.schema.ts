@@ -2,7 +2,8 @@ import { z } from 'zod'
 export const grupoSchema = z.object({
     nome: z.string().nonempty('O nome do grupo é obrigatório'),
     descricao: z.string().optional(),
-    jogadores: z.array(z.uuid()).optional()
+    jogadores: z.array(z.uuid()).optional(),
+    criadoEm: z.string().transform((str) => new Date(str)),
     /* no futuro, local será adicionado aqui */
 })
 

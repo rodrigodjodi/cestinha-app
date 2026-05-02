@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usuarioSchema } from '../schemas/usuario'
+import { usuarioSchema } from '../schemas/usuario.schema'
 // defines, emits, props, injections
 definePageMeta({ layout: 'login' })
 // composables
