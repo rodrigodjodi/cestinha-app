@@ -4,8 +4,8 @@ import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { nanoid } from 'nanoid'
 import useSlug from '~/composables/slug'
 import type { FormError, FormSubmitEvent } from '@nuxt/ui'
-import {grupoSchema} from '~/schemas/grupo'
-import type  {Grupo} from '~/schemas/grupo'
+import {grupoSchema} from '~/schemas/grupo.schema'
+import type  {Grupo} from '~/schemas/grupo.schema'
 const db = useFirestore()
 const user = useCurrentUser()
 const toast = useToast()
