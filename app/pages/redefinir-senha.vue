@@ -1,38 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { sendPasswordResetEmail } from 'firebase/auth'
-import { useFirebaseAuth } from 'vuefire'
-
+import { recoverPasswordSchema } from '../schemas/auth.schema'
+const { redefinirSenha, recoverPasswordFormState, carregando, handleFormError, serverErrors } = useFirebaseUser()
 // define o layout padrao para essa página
 definePageMeta({
   layout: 'login'
 })
 
-const auth = useFirebaseAuth()
-const router = useRouter()
-
-const form = ref({
-  email: ''
-})
-
-const carregando = ref(false)
-
-async function redefinirSenha() {
-  try {
-    carregando.value = true
-
-    if (!auth) throw new Error('Firebase Auth não disponível')
-
-    await sendPasswordResetEmail(auth, form.value.email)
-    alert('Email de redefinição de senha enviado.')
-  } catch (e) {
-    console.error('Erro na tentativa de redefinição de senha:', e)
-    alert('Email inválido.')
-  } finally {
-    carregando.value = false
-  }
-}
 </script>
 
 <template>
@@ -42,14 +15,15 @@ async function redefinirSenha() {
         <h2 class="text-xl font-bold">Redefinir senha</h2>
       </template>
 
-      <UForm :state="form" @submit.prevent="redefinirSenha">
-        <UFormField label="Email" name="email" class="mb-4">
-          <UInput v-model="form.email" type="email" placeholder="voce@email.com" required />
+      <UForm :state="recoverPasswordFormState" :schema="recoverPasswordSchema"
+       @submit.prevent="redefinirSenha" @error="handleFormError">
+        <UFormField label="Email" name="email" class="mb-4" :error="serverErrors.email">
+          <UInput v-model="recoverPasswordFormState.email" />
         </UFormField>
 
 
         <UButton type="submit" :loading="carregando" class="w-full">
-          Redefinir senha
+          {{carregando ? 'Enviando email de redefinição de senha...' : 'Redefinir senha'}}
         </UButton>
       </UForm>
 
@@ -59,7 +33,7 @@ async function redefinirSenha() {
         </div>
         <!-- botao para ir para login -->
         <div class="text-sm text-center">
-          <NuxtLink to="/login" class="underline">Voltar para login</NuxtLink>
+          <NuxtLink to="/entrar" class="underline">Voltar para login</NuxtLink>
         </div>
       </template>
     </UCard>

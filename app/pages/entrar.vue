@@ -1,35 +1,10 @@
 <script setup lang="ts">
-import { useFirebaseAuth } from 'vuefire'
 import { loginSchema } from '~/schemas/auth.schema'
 // defines, emits, props, injections
 definePageMeta({ layout: 'login'})
 
 // composables
-const auth = useFirebaseAuth()
-//stores
-const usuarioStore = useUsuarioStore()
-// state
-const { carregando, loginFormState } = storeToRefs(usuarioStore)
-// actions
-const {entrar} = usuarioStore
-
-
-
-onMounted(() => {
-  if (auth && auth.currentUser) {
-    carregando.value = true
-    navigateTo('/painel')
-  }
-  carregando.value = false
-})
-
-onUnmounted(() => {
-  console.log('Componente de login desmontado')
-})
-function handleFormError(errors: any) {
-  console.error('Erros de validação:', errors)
-  
-}
+const { entrar, loginFormState, carregando, handleFormError, serverErrors} = useFirebaseUser()
 </script>
 
 <template>
@@ -41,12 +16,12 @@ function handleFormError(errors: any) {
       </template>
 
       <UForm :state="loginFormState" :schema="loginSchema" @submit.prevent="entrar" @error="handleFormError">
-        <UFormField label="Email" name="email" class="mb-4">
-          <UInput v-model="loginFormState.email" placeholder="voce@email.com" />
+        <UFormField label="Email" name="email" class="mb-4" :error="serverErrors.email">
+          <UInput v-model="loginFormState.email"  />
         </UFormField>
 
-        <UFormField label="Senha" name="senha" class="mb-6">
-          <UInput v-model="loginFormState.senha" type="password" placeholder="Sua senha"  />
+        <UFormField label="Senha" name="senha" class="mb-6" :error="serverErrors.senha">
+          <UInput v-model="loginFormState.senha" type="password"   />
         </UFormField>
 
         <UButton type="submit" :loading="carregando" class="w-full" >

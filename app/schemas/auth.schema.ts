@@ -9,4 +9,7 @@ export const loginSchema = z.object({
   email: z.email('Email inválido'),
   senha: z.string('Campo obrigatório').min(6, 'A senha deve ter pelo menos 6 caracteres'),
 })
+export const recoverPasswordSchema = z.object({
+  email: z.email('Email inválido'),
+})
 export type SignupData = z.output<typeof signupSchema>

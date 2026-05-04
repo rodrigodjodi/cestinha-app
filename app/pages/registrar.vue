@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { usuarioSchema } from '../schemas/usuario.schema'
+import { signupSchema } from '../schemas/auth.schema'
 // defines, emits, props, injections
 definePageMeta({ layout: 'login' })
 // composables
-const usuarioStore = useUsuarioStore()
-// state
-const { carregando, registerFormState } = storeToRefs(usuarioStore)
-// actions
-const {registrar} = usuarioStore
+const { registrar, registerFormState, carregando, handleFormError, serverErrors } = useFirebaseUser()
+
+
 </script>
 
 <template>
@@ -17,21 +15,22 @@ const {registrar} = usuarioStore
         <h2 class="text-xl font-bold">Criar conta</h2>
       </template>
 
-      <UForm :state="registerFormState" :schema="usuarioSchema" @submit.prevent="registrar">
+      <UForm :state="registerFormState" :schema="signupSchema" 
+      @submit.prevent="registrar" @error="handleFormError" >
         <UFormField label="Nome" name="nome" class="mb-4">
           <UInput v-model="registerFormState.nome" placeholder="Nome para saudação no app" />
         </UFormField>
 
         <UFormField label="Email" name="email" class="mb-4">
-          <UInput v-model="registerFormState.email" type="email" placeholder="voce@email.com" required />
+          <UInput v-model="registerFormState.email" type="email" :error="serverErrors.email" />
         </UFormField>
 
         <UFormField label="Senha" name="senha" class="mb-6">
-          <UInput v-model="registerFormState.senha" type="password" placeholder="Crie uma senha" required />
+          <UInput v-model="registerFormState.senha" type="password" :error="serverErrors.senha" />
         </UFormField>
 
         <UButton type="submit" :loading="carregando" class="w-full">
-          Criar conta
+          {{ carregando ? 'Criando conta...' : 'Criar conta' }}
         </UButton>
       </UForm>
 

@@ -4,7 +4,7 @@ import { useCurrentUser } from 'vuefire'
 import { collection, query, where, addDoc, doc, setDoc, getDocs } from 'firebase/firestore'
 // middleware
 definePageMeta({
-  middleware: 'auth'
+  middleware: ['auth']
 })
 
 // composables
