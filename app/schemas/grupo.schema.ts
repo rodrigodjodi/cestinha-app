@@ -1,10 +1,13 @@
 import { z } from 'zod'
-export const grupoSchema = z.object({
-    nome: z.string().nonempty('O nome do grupo é obrigatório'),
-    descricao: z.string().optional(),
-    jogadores: z.array(z.uuid()).optional(),
-    criadoEm: z.string().transform((str) => new Date(str)),
-    /* no futuro, local será adicionado aqui */
+import { zTimestampToDate } from './timestamp.schema'
+const baseGrupoSchema = z.object({
+  nome: z.string().min(2),
+  usuarios: z.array(z.uuid()).min(1),
 })
 
-export type Grupo = z.infer<typeof grupoSchema>
+export const grupoSchema = baseGrupoSchema.extend({
+  criadoEm: zTimestampToDate,
+})
+
+export type GrupoFirestore = z.input<typeof grupoSchema>
+export type Grupo = z.output<typeof grupoSchema>

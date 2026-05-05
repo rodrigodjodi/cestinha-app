@@ -4,7 +4,8 @@ import { loginSchema } from '~/schemas/auth.schema'
 definePageMeta({ layout: 'login'})
 
 // composables
-const { entrar, loginFormState, carregando, handleFormError, serverErrors} = useFirebaseUser()
+const { loginFormState, carregando, serverErrors, handleFormError, entrar} = useFirebaseUser()
+
 </script>
 
 <template>

@@ -1,20 +1,19 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import type { SignupData } from "../schemas/auth.schema";
-import type { AuthError, UserCredential, User } from "firebase/auth";
+import type { AuthError } from "firebase/auth";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  signOut
 } from "firebase/auth";
-import { useFirebaseAuth, useFirestore, getCurrentUser } from "vuefire";
-import { doc, setDoc } from "firebase/firestore";
+import { useFirebaseAuth } from "vuefire";
 // Esse arquivo trata exclusivamente das interações com o usuário do Firebase, como registrar, entrar, atualizar perfil, etc.
 //  Ele é usado tanto na store de usuário quanto em outros lugares onde precisamos interagir com o usuário do Firebase.
 export default function () {
   // composables
   const auth = useFirebaseAuth();
-  const db = useFirestore();
   const route = useRoute();
   const conviteToken = route.query.convite?.toString();
   const toast = useToast();
@@ -38,7 +37,7 @@ export default function () {
   // REGISTRAR
   async function registrar(event: FormSubmitEvent<SignupData>) {
     serverErrors.value = {};
-    console.log("Registrar com dados:", event.data);
+    // console.log("Registrar com dados:", event.data);
     try {
       carregando.value = true;
 
@@ -52,18 +51,11 @@ export default function () {
       await updateProfile(userCredential.user, {
         displayName: event.data.nome,
       });
-      // passar esse código para store ou composable específico de usuário
-      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
-        nome: event.data.nome,
-        email: event.data.email,
-        criadoEm: new Date(),
-      });
-
-      /* if (conviteToken) {
-        router.push(`/claim?convite=${conviteToken}`);
-      } else {
-        router.push("/painel");
-      } */
+      await useUsuarioStore().criarUsuarioComFirebaseUser(userCredential.user)
+      const redirect = typeof route.query.redirect === 'string'
+        ? route.query.redirect
+        : '/painel'
+      await navigateTo(redirect)
     } catch (e) {
       console.error("Erro ao registrar:", (e as AuthError).code);
       switch ((e as AuthError).code) {
@@ -107,6 +99,10 @@ export default function () {
         event.data.email,
         event.data.senha,
       );
+      const redirect = typeof route.query.redirect === 'string'
+        ? route.query.redirect
+        : '/painel'
+      await navigateTo(redirect)
     } catch (e) {
       console.error(e);
       console.log((e as AuthError).code);
@@ -165,6 +161,12 @@ export default function () {
       carregando.value = false;
     }
   }
+  // SAIR
+  async function sair() {
+  if (!auth) throw new Error("Firebase Auth não disponível")
+  await signOut(auth)
+  await navigateTo('/entrar')
+}
   return {
     carregando,
     serverErrors,
@@ -175,5 +177,6 @@ export default function () {
     entrar,
     handleFormError,
     redefinirSenha,
+    sair
   };
 }

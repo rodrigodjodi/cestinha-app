@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useCurrentUser } from 'vuefire'
 import { collection, query, where, addDoc, doc, setDoc, getDocs } from 'firebase/firestore'
 // middleware
 definePageMeta({
@@ -8,18 +6,19 @@ definePageMeta({
 })
 
 // composables
-const user = useCurrentUser()
-const db = useFirestore()
 const pageTitle = useState('pageTitle')
-pageTitle.value = 'Painel de ' + user.value?.displayName
 const mostrarModalCriarGrupo = ref(false)
+// stores
+const usuarioStore = useUsuarioStore()
 
 useHead({title: 'Painel do usuário'}) // esse título para a aba do navegador: Meus Grupos - Cestinha
 // estado
+const { usuario } = storeToRefs(usuarioStore)
+pageTitle.value = 'Painel de ' + usuario.value?.nome
 const grupos = ref<any[]>([])
 const jogadores = ref<any[]>([])
 const carregando = ref(true)
-async function buscaJogadoresDoUsuario() {
+/* async function buscaJogadoresDoUsuario() {
   const jogadoresCollRef = collection(db, 'jogadores')
   const q = query(jogadoresCollRef, where('usuarioId', '==', user.value.uid))
   const jogadoresSnapshot = await getDocs(q)
@@ -56,8 +55,10 @@ watch(user, async (newUser) => {
   } finally {
     carregando.value = false    
   }
-}, { immediate: true })
+}, { immediate: true }) */
 const NovoGrupo = defineAsyncComponent(() => import('@/components/Dialogs/Novogrupo.vue'))
+console.log(usuario)
+
 </script>
 
 <template>
@@ -97,6 +98,6 @@ const NovoGrupo = defineAsyncComponent(() => import('@/components/Dialogs/Novogr
       </UCard>
     </div>
     <p v-else class="text-gray-500 mb-4">Você ainda não participa de nenhum grupo.</p> -->
-
+    <pre> {{ usuario }}</pre>
   </UContainer>
 </template>

@@ -1,37 +1,55 @@
-/* usuário é um entidade da tabela de usuário no sistema.
-É nela que vamos agrupar estatísticas de todos os jogadores desse usuário,
-além de informações de perfil, foto, etc.
-um usuário terá um jogador associado por grupo que participar.
-um jogador só pode estar associado a um usuário */
+import { defineStore } from "pinia"
+import { computed, watch } from "vue"
+import { doc, setDoc, serverTimestamp } from "firebase/firestore"
+import { useCurrentUser, useDocument } from "vuefire"
+import type { User } from "firebase/auth"
 
+import {
+  usuarioSchema,
+  baseUsuarioSchema,
+  type Usuario
+} from "@/schemas/usuario.schema"
 
-import { defineStore } from "pinia";
-import type { FormSubmitEvent } from "@nuxt/ui";
-import type { Usuario } from "../schemas/usuario.schema";
-import type { SignupData } from "../schemas/auth.schema";
-import type { AuthError, UserCredential, User } from "firebase/auth";
-import { createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword } from "firebase/auth";
-import { useFirebaseAuth, useFirestore, getCurrentUser } from "vuefire";
-import { doc, setDoc } from "firebase/firestore";
 export const useUsuarioStore = defineStore("usuario", () => {
-  // composables
-  const auth = useFirebaseAuth();
-  const db = useFirestore();
-  const router = useRouter();
-  const route = useRoute();
-  const conviteToken = route.query.convite?.toString();
-  const toast = useToast();
-  const user = ref<User | null>(null);
-  // state
-  const usuario = ref<Usuario | null>(null);
-  
- 
+  console.log("[usuarioStore] chamada da store de usuário")
+  const db = useFirestore()
+  const firebaseUser = useCurrentUser()
 
+  const usuarioRef = computed(() => {
+    if (!firebaseUser.value) return null
+    return doc(db, "usuarios", firebaseUser.value.uid)
+  })
 
-  // actions
-  
+  const usuarioRaw = useDocument(usuarioRef)
+
+  const usuario = computed<Usuario | null>(() => {
+    if (!usuarioRaw.value) return null
+    const result = usuarioSchema.safeParse(usuarioRaw.value)
+    if (!result.success) {
+      console.error("[usuarioStore] erro ao validar usuário", result.error)
+      return null
+    }
+    return result.data
+  })
+
+  async function criarUsuarioComFirebaseUser(firebaseUser: User) {
+      const parseResult = baseUsuarioSchema.safeParse({
+        nome: firebaseUser.displayName,
+        email: firebaseUser.email,
+      })
+      if (!parseResult.success) {
+        console.error("[usuarioStore] erro ao criar usuário", parseResult.error)
+        throw new Error("Dados do usuário inválidos")
+      }
+      const payload = {
+        ...parseResult.data,
+        criadoEm: serverTimestamp(),
+      }
+      return setDoc(doc(db, "usuarios", firebaseUser.uid), payload)
+  }
+  const uid = computed(() => firebaseUser.value?.uid)
   
   return {
-    usuario,
-  };
-});
+    usuario, uid, criarUsuarioComFirebaseUser
+  }
+})
