@@ -56,7 +56,6 @@ const NovoGrupo = defineAsyncComponent(() => import('@/components/Dialogs/Novogr
 
 <template>
   <UContainer class="py-8 max-w-4xl mx-auto">
-    <TheHeader />
     <div  class="text-center">
       <UModal title="Novo grupo">
         <UButton @click="mostrarModalCriarGrupo = true">Criar novo grupo</UButton>

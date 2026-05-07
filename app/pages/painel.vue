@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { collection, query, where, addDoc, doc, setDoc, getDocs } from 'firebase/firestore'
 // middleware
 definePageMeta({
   middleware: ['auth']
@@ -7,97 +6,57 @@ definePageMeta({
 
 // composables
 const pageTitle = useState('pageTitle')
-const mostrarModalCriarGrupo = ref(false)
 // stores
 const usuarioStore = useUsuarioStore()
 
-useHead({title: 'Painel do usuário'}) // esse título para a aba do navegador: Meus Grupos - Cestinha
+useHead({ title: 'Painel do usuário' }) // esse título para a aba do navegador: Meus Grupos - Cestinha
 // estado
-const { usuario } = storeToRefs(usuarioStore)
+const { usuario, uid } = storeToRefs(usuarioStore)
 pageTitle.value = 'Painel de ' + usuario.value?.nome
-const grupos = ref<any[]>([])
-const jogadores = ref<any[]>([])
-const carregando = ref(true)
-/* async function buscaJogadoresDoUsuario() {
-  const jogadoresCollRef = collection(db, 'jogadores')
-  const q = query(jogadoresCollRef, where('usuarioId', '==', user.value.uid))
-  const jogadoresSnapshot = await getDocs(q)
-  console.log('Jogadores encontrados:', jogadoresSnapshot.docs)
-  return jogadoresSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-}
-async function buscaGruposDosJogadores(jogadores: any[]) {
-  console.log('Buscando grupos para os jogadores:', jogadores)
-  if (jogadores.length === 0) return []
-  const gruposRef = collection(db, 'grupos')
-  const gruposPromises = jogadores.map(jogador => {
-    const q = query(gruposRef, where('jogadores', 'array-contains', jogador.id))
-    return getDocs(q)
-  })
-  const gruposSnapshots = await Promise.all(gruposPromises)
-  console.log('Grupos encontrados:', gruposSnapshots)
-  let docs = []
-  gruposSnapshots.forEach(snapshot => {
-    snapshot.docs.forEach(doc => {
-      docs.push({ id: doc.id, ...doc.data() })
-    })
-  })
-  return docs
-}
-watch(user, async (newUser) => {
-  if (!newUser) return
-  carregando.value = true
-  console.log(user)
-  try {
-    jogadores.value = await buscaJogadoresDoUsuario()
-    grupos.value = await buscaGruposDosJogadores(jogadores.value)
-  } catch (error) {
-    console.error('Erro ao carregar usuarios ou grupos:', error)
-  } finally {
-    carregando.value = false    
-  }
-}, { immediate: true }) */
-const NovoGrupo = defineAsyncComponent(() => import('@/components/Dialogs/Novogrupo.vue'))
-console.log(usuario)
+const { grupos, loading } = useGruposDoUsuario()
+const mostrarModalCriarGrupo = ref(false)
 
 </script>
 
 <template>
-  <UContainer class="py-8 max-w-4xl mx-auto">
-    
-    
-    <p>Perfil</p>
-    <p>Grupos</p>
-    <p>Jogos</p>
-    <p>Estatísticas</p>
-    <!-- <div  class="text-center">
-      <UModal title="Novo grupo">
-        <UButton @click="mostrarModalCriarGrupo = true">Criar novo grupo</UButton>
+  <UContainer class="py-6">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-bold">Meus grupos</h1>
+
+      <UModal title="Novo Grupo" v-model:open="mostrarModalCriarGrupo">
+        <UButton icon="i-lucide-plus" label="Novo Grupo" color="primary"  />
         <template #body>
-            <NovoGrupo  />
+          <p class="mb-4 text-dimmed">Um grupo será criado e você será adicionado como jogador.</p>
+          <FormNovoGrupo @close="mostrarModalCriarGrupo = false"/>
         </template>
       </UModal>
-        
     </div>
 
-    <div v-if="grupos && grupos.length > 0" class="grid md:grid-cols-2 gap-4">
-      <UCard
-        v-for="grupo in grupos"
-        :key="grupo.id"
-        class="cursor-pointer hover:shadow-lg transition"
-        
-        @click="navigateTo(`/grupos/${grupo.id}`)"
-      >
-        <template #header>
-          <h2 class="text-lg font-bold" :style="{ 'view-transition-name': `grupo-header-${grupo.id}` }"
-          >{{ grupo.nome }}</h2>
-        </template>
-        <div class="text-sm text-gray-600">
-          <p><strong>Local:</strong> {{ grupo.local.nome }}</p>
-          <p><strong>Jogadores:</strong> {{ grupo.jogadores.length }}</p>
-        </div>
+    <div v-if="loading">
+      <USkeleton class="h-24 mb-3" v-for="i in 3" :key="i" />
+    </div>
+
+    <div v-else-if="grupos.length === 0">
+      <UCard>
+        <p class="text-gray-500">
+          Você ainda não participa de nenhum grupo.
+        </p>
       </UCard>
     </div>
-    <p v-else class="text-gray-500 mb-4">Você ainda não participa de nenhum grupo.</p> -->
-    <pre> {{ usuario }}</pre>
+
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <UCard v-for="grupo in grupos" :key="grupo?.id" class="cursor-pointer hover:shadow-lg transition"
+        @click="navigateTo(`/grupos/${grupo?.id}`)">
+        <template #header>
+          <h2 class="font-semibold text-lg">
+            {{ grupo?.nome }}
+          </h2>
+        </template>
+
+        <p class="text-sm text-gray-500">
+          {{ grupo?.usuarios.length }} participante(s)
+        </p>
+      </UCard>
+    </div>
   </UContainer>
 </template>

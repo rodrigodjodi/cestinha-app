@@ -1,5 +1,3 @@
-import { defineStore } from "pinia"
-import { computed, watch } from "vue"
 import { doc, setDoc, serverTimestamp } from "firebase/firestore"
 import { useCurrentUser, useDocument } from "vuefire"
 import type { User } from "firebase/auth"
