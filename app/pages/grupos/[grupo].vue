@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
 import CardJogadores from '~/components/CardJogadores.vue'
 import NovoJogo from '~/components/Dialogs/NovoJogo.vue'
@@ -8,6 +8,7 @@ import { grupoSchema, type Grupo } from '~/schemas/grupo.schema'
 const db = useFirestore()
 const route = useRoute()
 const pageTitle = useState('pageTitle')
+const user = useCurrentUser()
 // estado
 const grupoId = route.params.grupo as string
 const docRefGrupo = doc(db, 'grupos', grupoId)
@@ -20,21 +21,27 @@ promiseGrupo.value.then(() => {
   useHead({ title: grupo.value?.nome }) // esse título para a aba do navegador: Titulo - Cestinha
   pageTitle.value = grupo.value?.nome
 })
+async function novoJogo() {
+  console.log("novoJogo chamado")
+  const jogoRef = doc(collection(db, 'jogos'))
+  await setDoc(jogoRef, {
+    grupoId: route.params.grupo,
+    criadoEm: serverTimestamp(),
+    criadoPor: user.value?.uid,
+    videoId: null,
+    status: 'setup'
+  })
+  await navigateTo(`/jogos/${jogoRef.id}`)
+}
+ 
 </script>
 <template>
   <div>
     <h1 class="text-2xl font-bold mb-6">{{ pageTitle }}</h1>
 
-    <!-- paniel Jogos -->
-    <UCard class="w-full max-w-lg mb-4">
-      <template #header>
-        <div class="flex justify-between">
-          <span class="text-lg font-semibold">Jogos do Grupo</span>
-          <UButton>Novo Jogo</UButton>
-      </div>
-      </template>
-      <p>Ainda não há jogos</p>
-    </UCard>
+    <!-- paniel Dias -->
+    <CardDiasGrupo />
+    
 
     <!-- card Jogoadores -->
     <CardJogadores />
