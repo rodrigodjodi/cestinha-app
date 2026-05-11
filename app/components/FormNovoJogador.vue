@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { baseJogadorSchema, type CriacaoJogador } from '~/schemas/jogador.schema';
 import type { FormSubmitEvent, FormErrorEvent } from "@nuxt/ui";
-import { doc, setDoc, collection } from 'firebase/firestore'
-const props = defineProps(['grupoId'])
-// composables
-const db = useFirestore();
-
+const props = defineProps<{grupoId: string}>()
 
 // state
 const criacaoJogadorFormState = reactive<Partial<CriacaoJogador>>({
@@ -21,10 +17,9 @@ const nomeJogadorValido = computed(() => {
 async function criarJogador(event: FormSubmitEvent<CriacaoJogador>) {
   console.log("[CardJogadores] Form submitted with data: ", event.data);
   try {
-    const jogadorRef = doc(collection(db, "jogadores"));
-    await setDoc(jogadorRef, event.data);
+    await useCriacaoJogador(event.data)
   } catch (e) {
-    console.error("Erro ao criar grupo:", e);
+    console.error("Erro ao criar jogador:", e);
   } finally {
     criacaoJogadorFormState.nome = "";
   }

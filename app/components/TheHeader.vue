@@ -21,6 +21,11 @@ const items = computed<NavigationMenuItem[]>(() => [{
   icon: 'i-lucide-users',
   active: route.path.startsWith('/grupos')
 }, {
+  label: 'Dias',
+  icon: 'i-lucide-calendar',
+  to: '/dias',
+    active: route.path.startsWith('/dias')
+}, {
   label: 'Jogos',
   icon: 'i-lucide-dices',
   to: '/jogos',

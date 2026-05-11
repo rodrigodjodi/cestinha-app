@@ -8,7 +8,7 @@ useHead({
 </script>
 
 <template>
-  <UApp :locale="pt_br">
+  <UApp :locale="pt_br" :toaster="{position:'top-center'}">
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>

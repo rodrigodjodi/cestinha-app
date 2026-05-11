@@ -22,7 +22,7 @@ const jogadores = useListaJogadores(grupoId)
 
       
     <template #footer>
-      <FormCriacaoJogador :grupo-id="grupoId"/>
+      <FormNovoJogador :grupo-id="grupoId"/>
     </template>
   </UCard>
 </template>

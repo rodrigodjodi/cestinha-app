@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { criacaoGrupoSchema, type CriacaoGrupo } from '~/schemas/grupo.schema';
+import {  baseJogadorSchema, type CriacaoJogador } from '~/schemas/jogador.schema';
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
 // define a close emitter para fechar o modal após a criação do grupo
@@ -27,11 +28,18 @@ async function criarGrupo(event: FormSubmitEvent<CriacaoGrupo>) {
         })
         // criacao do jogador para o usuario que criou o grupo
         const jogadorRef = doc(collection(db, 'jogadores'))
-        batch.set(jogadorRef, {
-            usuarioId: uid.value,
+        const payload:CriacaoJogador = {
+            usuarioId: uid.value!,
             grupoId: grupoRef.id,
             nome: event.data.apelido,
-            criadoEm: serverTimestamp()
+            atribuicao: 'admin'
+        }
+        const payloadEnvio = baseJogadorSchema.parse(payload)
+        // aqui não vou chmar o composable de criação de jogador porque não preciso testar existencia do nome
+        // e quero manter dentro do mesmo batch
+        batch.set(jogadorRef, {
+            ...payloadEnvio,
+            criadoEm: serverTimestamp(),
         })
         await batch.commit()
     } catch (error) {
