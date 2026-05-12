@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { zTimestampToDate } from "./timestamp.schema";
+import normalizarTexto from "@/utils/normalizarTexto";
 // nomenclatura: base usamos na criação e edição, e o schema
 // é o que usamos para ler os dados do banco, onde as datas já
 // estão convertidas para Date
@@ -21,7 +21,6 @@ export const baseJogadorSchema = objetoBaseJogadorSchema.transform(data => ({
 
 // schema usado para calcular o output, recebe servertimestamp do firebase
 export const jogadorSchema = objetoBaseJogadorSchema.extend({
-  criadoEm: zTimestampToDate,
   nomeNormalizado: z.string().min(2)
 })
 

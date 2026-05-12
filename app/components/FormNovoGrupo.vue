@@ -1,47 +1,20 @@
 <script setup lang="ts">
-import { criacaoGrupoSchema, type CriacaoGrupo } from '~/schemas/grupo.schema';
-import {  baseJogadorSchema, type CriacaoJogador } from '~/schemas/jogador.schema';
+import { criacaoGrupoSchema, type FormCriacaoGrupo } from '~/schemas/grupo.schema';
 import type { FormSubmitEvent } from "@nuxt/ui";
-import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
-// define a close emitter para fechar o modal após a criação do grupo
+
 const emits = defineEmits(['close'])
-const db = useFirestore()
-const { uid } = storeToRefs(useUsuarioStore())
-const formState = reactive<Partial<CriacaoGrupo>>({
+const formState = reactive<Partial<FormCriacaoGrupo>>({
     nome: "",
-    usuarios: [uid.value!],
     apelido: ""
 })
 const carregando = ref(false)
-async function criarGrupo(event: FormSubmitEvent<CriacaoGrupo>) {
+async function criarGrupo(event: FormSubmitEvent<FormCriacaoGrupo>) {
     console.log("Criando grupo com dados:", event.data)
     try {
         carregando.value = true
-        const batch = writeBatch(db)
-        const grupoRef = doc(collection(db, 'grupos'))
-        // criacao do grupo
-        batch.set(grupoRef, {
-            nome: event.data.nome,
-            usuarios: event.data.usuarios,
-            criadoPor: uid.value,
-            criadoEm: serverTimestamp()
-        })
-        // criacao do jogador para o usuario que criou o grupo
-        const jogadorRef = doc(collection(db, 'jogadores'))
-        const payload:CriacaoJogador = {
-            usuarioId: uid.value!,
-            grupoId: grupoRef.id,
-            nome: event.data.apelido,
-            atribuicao: 'admin'
-        }
-        const payloadEnvio = baseJogadorSchema.parse(payload)
-        // aqui não vou chmar o composable de criação de jogador porque não preciso testar existencia do nome
-        // e quero manter dentro do mesmo batch
-        batch.set(jogadorRef, {
-            ...payloadEnvio,
-            criadoEm: serverTimestamp(),
-        })
-        await batch.commit()
+        const result = await useCriacaoGrupo(event.data)
+        console.log(result)
+        
     } catch (error) {
         console.error("Erro ao criar grupo:", error)
     } finally {
