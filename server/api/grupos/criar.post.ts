@@ -15,7 +15,12 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   console.log(body)
   // 5. zod
-  const payload = criacaoGrupoSchema.parse(body)
+  const validacao = criacaoGrupoSchema.safeParse(body)
+   if (!validacao.success) throw createError({
+    statusCode: 400,
+    statusMessage: 'Dados inválidos'
+  })
+  const payload = validacao.data
   // 6. transaction: se grupo ou usuário falhar, nada é criado
   const result = await adminDb.runTransaction(async (transaction)=>{
     const now = Timestamp.now()
