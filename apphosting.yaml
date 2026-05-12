@@ -9,6 +9,13 @@ runConfig:
 
 # Environment variables and secrets.
 env:
+  - variable: FIREBASE_PROJECT_ID
+    secret: FIREBASE_PROJECT_ID
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
+    
   - variable: NUXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyAwqnYw_adNUkZZrDeSSaaZGIRJ1WtA8Zw"
     availability:
