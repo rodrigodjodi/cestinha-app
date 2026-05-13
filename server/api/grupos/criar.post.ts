@@ -4,11 +4,12 @@ import { criacaoGrupoSchema } from "@/schemas/grupo.schema";
 import { baseJogadorSchema } from '@/schemas/jogador.schema'
 export default defineEventHandler(async (event) => {
   // 1. header
-  const authoriation = getHeader(event, "authorization");
-  if (!authoriation)
+  const authorization = getHeader(event, "authorization");
+  if (!authorization?.startsWith('Bearer ')) {
     throw createError({ statusCode: 401, statusMessage: "Não autenticado" });
+  }
   // 2.token
-  const token = authoriation.replace('Bearer ', '')
+  const token = authorization.replace('Bearer ', '')
   // 3. firebase auth
   const decodedToken = await adminAuth.verifyIdToken(token)
   // 4. body
@@ -51,5 +52,4 @@ export default defineEventHandler(async (event) => {
   
   // 7. resposta
   return result
-
 });
