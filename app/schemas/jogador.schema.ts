@@ -16,7 +16,7 @@ const objetoBaseJogadorSchema = z.object({
 })
 export const baseJogadorSchema = objetoBaseJogadorSchema.transform(data => ({
   ...data,
-  nomeNormalizado: normalizarTexto(data.nome), // normalizarTexto auto importado de utils
+  nomeNormalizado: normalizarTexto(data.nome)
 }))
 
 // schema usado para calcular o output, recebe servertimestamp do firebase

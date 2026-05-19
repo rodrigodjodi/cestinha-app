@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import type { Jogador } from '~/schemas/jogador.schema';
+const props = defineProps<{
+  jogadorLogado: MaybeRefOrGetter<Jogador | null>
+}>()
 const route = useRoute()
 const grupoId = computed(() => route.params.grupo as string);
 const jogadores = useListaJogadores(grupoId)
-
+console.log(props.jogadorLogado)
 </script>
 
 <template>
@@ -22,7 +26,7 @@ const jogadores = useListaJogadores(grupoId)
 
       
     <template #footer>
-      <FormNovoJogador :grupo-id="grupoId"/>
+      <FormNovoJogador v-if="props.jogadorLogado?.atribuicao !== 'avulso'" :grupo-id="grupoId" :jogador-logado="jogadorLogado"/>
     </template>
   </UCard>
 </template>

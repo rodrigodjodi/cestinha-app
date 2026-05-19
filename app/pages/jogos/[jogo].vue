@@ -2,9 +2,11 @@
 import { doc } from 'firebase/firestore'   
 const db = useFirestore()
 const route = useRoute()
-const {data:jogo} = useDocument(doc(db, 'jogos', route.params.jogo as string))
+const jogo = useDocument(doc(db, 'jogos', route.params.jogo as string))
 const grupoId = computed(()=>jogo.value?.grupoId)
+const diaId = computed(()=>jogo.value?.diaId)
 const jogadores = useListaJogadores(grupoId)
+const presencas = useListaPresencasDiaGrupo(diaId, grupoId)
 const modalReferenciarVideo = ref(false)
 </script>
 
@@ -22,5 +24,6 @@ const modalReferenciarVideo = ref(false)
   :src="`https://www.youtube.com/embed/${jogo.videoId}`"
   allowfullscreen
 />
+
 
 </template>
