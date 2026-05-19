@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { doc, collection, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, collection, where, query, limit } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
 import CardJogadores from '~/components/CardJogadores.vue'
 import NovoJogo from '~/components/Dialogs/NovoJogo.vue'
@@ -10,30 +10,24 @@ const route = useRoute()
 const pageTitle = useState('pageTitle')
 const user = useCurrentUser()
 // estado
-const grupoId = route.params.grupo as string
-const docRefGrupo = doc(db, 'grupos', grupoId)
-const grupo = ref<Grupo>()
-const { data: grupoRaw, promise: promiseGrupo, error } = useDocument(docRefGrupo)
-promiseGrupo.value.then(() => {
-  // parse with zod
-  grupo.value = grupoSchema.parse(grupoRaw.value)
-  // SEO
-  useHead({ title: grupo.value?.nome }) // esse título para a aba do navegador: Titulo - Cestinha
-  pageTitle.value = grupo.value?.nome
+const q = computed(() => {
+  if (!user.value) {
+    return null
+  }
+  return query(collection(db, 'jogadores'),
+    where('usuarioId', '==', user.value?.uid),
+    where('grupoId', '==', route.params.grupo as string
+    ), limit(1))
 })
-async function novoJogo() {
-  console.log("novoJogo chamado")
-  const jogoRef = doc(collection(db, 'jogos'))
-  await setDoc(jogoRef, {
-    grupoId: route.params.grupo,
-    criadoEm: serverTimestamp(),
-    criadoPor: user.value?.uid,
-    videoId: null,
-    status: 'setup'
-  })
-  await navigateTo(`/jogos/${jogoRef.id}`)
-}
- 
+const jogadorLogado = useCollection(q)
+console.log("jogador logado: ", jogadorLogado)
+const grupoId = route.params.grupo as string
+const docRefGrupo = computed(() => doc(db, 'grupos', grupoId))
+const grupo = useDocument(docRefGrupo)
+// SEO
+useHead({ title: grupo.value?.nome }) // esse título para a aba do navegador: Titulo - Cestinha
+pageTitle.value = grupo.value?.nome
+
 </script>
 <template>
   <div>
@@ -41,10 +35,10 @@ async function novoJogo() {
 
     <!-- paniel Dias -->
     <CardDiasGrupo />
-    
+
 
     <!-- card Jogoadores -->
-    <CardJogadores />
+    <CardJogadores :jogadorLogado="jogadorLogado[0]" />
 
     <p>Nesta página: </p>
     <ol>
@@ -52,8 +46,7 @@ async function novoJogo() {
       <li>painel jogadores: lista de jogadores, botão novo jogador</li>
     </ol>
     <pre>{{ grupo }}</pre>
-    
-    <pre v-if="error">{{ error.message }}</pre>
+
   </div>
 </template>
 

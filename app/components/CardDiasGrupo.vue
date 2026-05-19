@@ -1,19 +1,22 @@
 <script setup lang="ts">
+
+/* todo: deixei umas anotações para deixar o component menos acoplado,
+usando uma prop eu posso consultar calendários de vários grupos numa mesma página*/
+ 
 import { doc, setDoc, collection, deleteDoc } from 'firebase/firestore'
 import { CalendarDate, type DateValue } from '@internationalized/date'
 const db = useFirestore()
 const route = useRoute()
 const diaSelecionado = shallowRef<CalendarDate>()
-const grupoId = computed(() => route.params.grupo as string)
+const grupoId = computed(() => route.params.grupo as string) // todo: transformar em prop
 async function criarDia() {
   const diaRef = doc(collection(db, 'dias'))
   const payload = {
     grupoId: grupoId.value,
-    presencas: [],
-    data: diaSelecionado.value?.toString()
+    data: diaSelecionado.value?.toString() // todo: adicionar status
   }
 
-  await setDoc(diaRef, payload)
+  await setDoc(diaRef, payload) // todo: mover para rota /api/dias/criar
   await navigateTo(`/dias/${idDiaSelecionado.value}`)
 }
 const diasGrupo = useListaDiasGrupo(grupoId)
@@ -25,8 +28,8 @@ const idDiaSelecionado = computed(()=>{
   let dia = diasGrupo.value.find(el=>el.data === diaSelecionado.value?.toString())
   return dia ? dia.id : undefined
 })
-console.log(diaSelecionado)
-console.log(diasGrupo)
+// console.log(diaSelecionado)
+// console.log(diasGrupo)
 async function excluirDia(){
   let diaExcluir = diasGrupo.value.find(el=>el.data === diaSelecionado.value?.toString())
   if(diaExcluir?.id){

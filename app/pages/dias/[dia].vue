@@ -1,67 +1,74 @@
 <script setup lang="ts">
-import { error } from '#build/ui'
 import { doc } from 'firebase/firestore'
+import { apiFetch } from '~/services/apiFetch'
 const db = useFirestore()
 const route = useRoute()
+const user = useCurrentUser()
 const dia = useDocument(doc(db, 'dias', route.params.dia as string))
-const toast = useToast()
+const diaId = computed(() => dia.value?.id)
 const grupoId = computed(() => dia.value?.grupoId)
+// console.log('diaId', diaId, 'grupoId', grupoId)
+const presencas = useListaPresencasDiaGrupo(diaId, grupoId)
 const jogadores = useListaJogadores(grupoId)
-const searchVal = ref('')
-
-const listaNomes = computed(() => jogadores.value?.map(el => el.nome))
-const inscritos = ref([])
-function inscreverJogador() {
-  console.log(searchVal.value)
-  if (listaNomes.value.includes(searchVal.value)) {
-    inscritos.value.push(searchVal.value) // todo: criar objeto de inscrito e salvar no banco
-    searchVal.value = ''
-  } else {
-    // todo: crair modal oferecendo para criar o jogador
-    toast.add({
-      title: 'Jogador não existe, criar?',
-      description: "Verifique grafia ou clique para criar jogador no grupo",
-      color: 'error',
-      icon: 'i-lucide-x-circle',
-      actions: [{
-        icon: 'i-lucide-refresh-cw',
-        label: 'Criar jogador',
-        color: 'success',
-        variant: 'outline',
-        onClick: async (e) => {
-          try{
-            await useCriacaoJogador({
-              nome: searchVal.value,
-              grupoId: grupoId.value,
-              usuarioId: null,
-            })
-          } catch (e) {e=> console.error(e)}
-        }
-      }]
-    })
-    searchVal.value = ''
-  }
+const jogadorLogado = computed(() => jogadores.value.find(el => el.usuarioId === user.value?.uid))
+const confirmados = computed(() => presencas.value.filter(presenca => presenca.situacao === '0.confirmado'))
+const emEspera = computed(() => presencas.value.filter(presenca => presenca.situacao === '1.espera'))
+const jogosDiaGrupo = useListaJogosDiasGrupo(diaId, grupoId)
+async function novoJogo() {
+  console.log("novoJogo chamado")
+  // manda para api de criar jogo...
+  const { jogoId } = await apiFetch('/api/jogos/criar', {
+    method: 'POST',
+    body: {
+      diaId: diaId.value,
+      grupoId: grupoId.value,
+      videoId: null
+    }
+  })
+  await navigateTo(`/jogos/${jogoId}`)
 }
-
 </script>
 <template>
-  <UCard :title="`Lista Basquete ${new Date(dia?.data).toLocaleDateString()}`">
-    <UForm @submit="inscreverJogador">
-      <UFormField>
-        <UInputMenu v-model="searchVal" autocomplete :items="listaNomes" :trailing-icon="false"
-          :content="{ hideWhenEmpty: true }" placeholder="Nome jogador..." />
-      </UFormField>
-    </UForm>
-    <!-- <template #footer>
-            <FormNovoJogador :grupo-id="grupoId"/>
-        
-        </template> -->
-  </UCard>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+    <!-- CARD PRESENCAS -->
+    <UCard>
+      <div class="flex flex-row mb-4">
+        <h2 class="text-xl font-bold">{{ `Lista ${new Date(dia?.data).toLocaleDateString()}` }}</h2>
+        <UBadge class="ml-auto" color="success" variant="soft">{{ confirmados.length }} Confirmados</UBadge>
+        <UBadge class="ml-4" color="warning" variant="soft">{{ emEspera.length }} Espera</UBadge>
+      </div>
+      <BotaoConfirmacao :jogadorLogado="jogadorLogado" :diaId="diaId" :grupoId="grupoId" :presencas="presencas"/>
+      <!-- LISTAS -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Jogadores confirmados</label>
+        <ol>
+          <li v-for="presenca in confirmados" :key="presenca.id">{{ presenca.jogadorId }}</li>
+        </ol>
+        <label class="block text-sm font-medium text-gray-700">Jogadores em espera</label>
+        <ul>
+          <li v-for="presenca in emEspera" :key="presenca.id">{{ presenca.jogadorId }}</li>
+        </ul>
+      </div>
+
+      <!-- ADICIONAR JOGADOR À LISTA (SÓ ADMIN) -->
+      <FormInscricaoJogador v-if="jogadorLogado?.atribuicao === 'admin'" 
+        :dia-id="diaId" :grupo-id="grupoId" :jogadores="jogadores" :presencas="presencas"
+      />
+    </UCard>
+    <!-- CARD JOGOS  -->
+    <UCard>
+      <div class="flex flex-row mb-4">
+        <h2 class="text-xl font-bold">{{ `Jogos ${new Date(dia?.data).toLocaleDateString()}` }}</h2>
+        <UBadge class="ml-auto" color="success" variant="soft">{{ jogosDiaGrupo.length }} Jogos</UBadge>
+      </div>
+      <UButton color="primary" @click="novoJogo">Adicionar jogo</UButton>
+    </UCard>
+  </div>
 
 
 
 
   <pre>{{ dia }}</pre>
-  <pre>{{ inscritos }}</pre>
+  <pre>{{ presencas }}</pre>
   <pre>{{ jogadores }}</pre>
 </template>
