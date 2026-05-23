@@ -1,0 +1,230 @@
+<script setup lang="ts">
+import { type Presenca } from '@/schemas/presenca.schema'
+import {type Jogador }  from '@/schemas/jogador.schema' 
+import {type Escalacao }  from '@/schemas/jogo.schema'
+import { deleteField } from 'firebase/firestore'
+import { useElementSize } from '@vueuse/core'
+const props = defineProps<{
+  presencas: Presenca[]
+  jogadores: Jogador[],
+  escalacao?: Escalacao
+}>()
+const jogadoresMap = computed(() => {
+  return new Map(
+    props.jogadores.map(j => [j.id, j])
+  )
+})
+type ItemJogadorEscalacao = {
+  id: string
+  nome: string
+  subtitulo?: string
+  fotoUrl?: string
+}
+// isso aqui basicamente é um join entre jogadores x presencas
+const itensPresencaLista = computed<ItemJogadorEscalacao[]>(() => {
+  return props.presencas.flatMap(presenca => {
+    const jogador = jogadoresMap.value.get(presenca.jogadorId)
+    if (!jogador) return []
+    return {
+      id: jogador.id,
+      nome: jogador.nome,
+      fotoUrl: jogador.fotoUrl || '',
+      subtitulo: ''
+    }
+  })
+})
+
+
+
+
+const timeA = computed(() => {
+  return itensPresencaLista.value
+  .filter(j => props.escalacao?.[j.id]?.time === 'A')
+})
+const timeB = computed(() => {
+  return itensPresencaLista.value
+  .filter(j => props.escalacao?.[j.id]?.time === 'B')
+})
+const banco = computed(() => {
+  return itensPresencaLista.value.filter(itemJogador => {
+    return !props.escalacao?.[itemJogador.id]
+  })
+})
+
+type Colecao = 'A' | 'B' | 'banco'
+const selecionados = ref<Record<Colecao, Set<string>>>({
+  A: new Set(),
+  B: new Set(),
+  banco: new Set()
+})
+
+function toggleJogador(id: string, colecao: Colecao) {
+  const set = selecionados.value[colecao]
+  if (set.has(id)) {
+    set.delete(id)
+  } else {
+    set.add(id)
+  }
+  console.log('selecionados: ', selecionados.value)
+}
+
+async function mover(origem:Colecao, destino: Colecao) {
+  console.log('origem: ', origem)
+  console.log('destino: ', destino)
+  console.log('selecionados: ', selecionados)
+  const ids = selecionados.value[origem]
+  if (!ids.size) return
+  const updates = {}
+  for (const id of ids) {
+    // indo para banco = remove da escalacao
+    if (destino === 'banco') {
+      updates[`escalacao.${id}`] = deleteField()
+    } else { // indo para time
+      updates[`escalacao.${id}`] = {
+        time: destino
+      }
+    }
+  }
+  console.log('updates', updates)
+  await useJogoStore().gravarEscalacao(updates)
+
+  // limpa apenas a origem
+  selecionados.value[origem].clear()
+}
+const container = useTemplateRef('bancoRef')
+const { height } = useElementSize(container)
+const compact = computed(() => height.value < 140)
+watch(height, value => {
+  console.log(value)
+})
+</script>
+
+<template>
+  <UCard
+  class="overflow-hidden h-full flex flex-col"
+  :ui="{
+    body: 'p-1 sm:p-1 flex flex-col flex-1 min-h-0'
+  }"
+>
+    <!-- <template #header>
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">
+          Escalações
+        </h2>
+
+        <UBadge
+          color="neutral"
+          variant="soft"
+        >
+          {{ selecionados.size }} selecionados
+        </UBadge>
+      </div>
+    </template> -->
+
+    <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
+      <!-- TIME A -->
+      <ListaEscalacao colecao="A"
+        titulo="Time A"
+        color="primary"
+        :jogadores="timeA"
+        :selecionados="selecionados.A"
+        :banco="selecionados.banco"
+        @toggle="(id)=>toggleJogador(id, 'A')"
+        @mover="mover"
+      />
+
+      <!-- AÇÕES -->
+      <div class="flex items-center justify-center">
+        <div class="flex flex-col gap-4">
+          <UButton class="size-8  sm:size-10 py-8 justify-center"
+            icon="i-lucide-arrow-right"
+            square
+            :disabled="!selecionados.A.size"
+            @click=""
+          />
+          
+          <UButton class="size-8  sm:size-10 py-8 justify-center"
+            icon="i-lucide-arrow-left-right"
+            square
+            color="neutral"
+            :disabled="false"
+            @click=""
+          />
+
+          <UButton class="size-8  sm:size-10 py-8 justify-center"
+            icon="i-lucide-arrow-left"
+            square
+            color="neutral"
+            :disabled="!selecionados.B.size"
+            @click=""
+          />
+        </div>
+      </div>
+
+      <!-- TIME B -->
+      <ListaEscalacao
+        colecao="B"
+        titulo="Time B"
+        color="error"
+        :jogadores="timeB"
+        :selecionados="selecionados.B"
+        :banco="selecionados.banco"
+        @toggle="(id)=>toggleJogador(id, 'B')"
+        @mover="mover"
+      />
+    </div>
+
+    <!-- PRESENÇAS: desde aqui preciso que ela tente preencher a tela -->
+    <div class="mt-2 flex flex-col flex-1 min-h-0">
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="font-medium">
+          Presenças
+        </h3>
+
+        <UBadge
+          color="neutral"
+          variant="subtle"
+        >
+          {{ banco.length }}
+        </UBadge>
+      </div>
+      <!-- eu preciso de que ssa div estique até preencher a tela -->
+      <!-- daí sim eu consigo ler a sual altura -->
+      <div ref="bancoRef" class="flex-1 min-h-0">
+        <TransitionGroup
+        
+          name="jogadores"
+          tag="div"
+          class="flex gap-2 basis-30"
+          :class="[compact ? 'overflow-x-auto' : 'flex-wrap']"
+        >
+          <ItemJogadorSelecao
+            v-for="jogador in banco"
+            :key="jogador.id"
+            :jogador="jogador"
+            :selected="selecionados.banco.has(jogador.id)"
+            @toggle="toggleJogador(jogador.id, 'banco')"
+          />
+        </TransitionGroup>
+      </div>
+    </div>
+  </UCard>
+</template>
+
+<style scoped>
+.jogadores-move,
+.jogadores-enter-active,
+.jogadores-leave-active {
+  transition: all 250ms ease;
+}
+
+.jogadores-enter-from,
+.jogadores-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.jogadores-leave-active {
+  position: absolute;
+}
+</style>

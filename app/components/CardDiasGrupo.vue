@@ -1,5 +1,10 @@
 <script setup lang="ts">
-
+import { baseDiaSchema } from '~/schemas/dia.schema';
+const props = defineProps<{
+  /* diaId: MaybeRefOrGetter<string|undefined> */
+  grupoId: MaybeRefOrGetter<string|undefined>
+  
+}>()
 /* todo: deixei umas anotações para deixar o component menos acoplado,
 usando uma prop eu posso consultar calendários de vários grupos numa mesma página*/
  
@@ -8,18 +13,17 @@ import { CalendarDate, type DateValue } from '@internationalized/date'
 const db = useFirestore()
 const route = useRoute()
 const diaSelecionado = shallowRef<CalendarDate>()
-const grupoId = computed(() => route.params.grupo as string) // todo: transformar em prop
 async function criarDia() {
   const diaRef = doc(collection(db, 'dias'))
-  const payload = {
-    grupoId: grupoId.value,
+  const payload = baseDiaSchema.parse({
+    grupoId: toValue(props.grupoId),
     data: diaSelecionado.value?.toString() // todo: adicionar status
-  }
-
-  await setDoc(diaRef, payload) // todo: mover para rota /api/dias/criar
-  await navigateTo(`/dias/${idDiaSelecionado.value}`)
+  })
+  console.log(payload)
+  /* await setDoc(diaRef, payload) // todo: mover para rota /api/dias/criar
+  await navigateTo(`/dias/${idDiaSelecionado.value}`) */
 }
-const diasGrupo = useListaDiasGrupo(grupoId)
+const diasGrupo = useListaDiasGrupo(props.grupoId)
 const listaDatas = computed(()=>diasGrupo.value.map(el=>el.data))
 function diaTeveJogo(date:string){
   return listaDatas.value.includes(date)

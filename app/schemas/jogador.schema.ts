@@ -21,7 +21,9 @@ export const baseJogadorSchema = objetoBaseJogadorSchema.transform(data => ({
 
 // schema usado para calcular o output, recebe servertimestamp do firebase
 export const jogadorSchema = objetoBaseJogadorSchema.extend({
-  nomeNormalizado: z.string().min(2)
+  nomeNormalizado: z.string().min(2),
+  id: z.string().min(1),
+  fotoUrl: z.string().optional(),
 })
 
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-import { apiFetch } from '~/services/apiFetch'
+import { z } from 'zod' 
+import { baseJogoSchema, type BaseJogo } from '~/schemas/jogo.schema'
 const db = useFirestore()
 const route = useRoute()
 const user = useCurrentUser()
@@ -15,18 +16,10 @@ const confirmados = computed(() => presencas.value.filter(presenca => presenca.s
 const emEspera = computed(() => presencas.value.filter(presenca => presenca.situacao === '1.espera'))
 const jogosDiaGrupo = useListaJogosDiasGrupo(diaId, grupoId)
 async function novoJogo() {
-  console.log("novoJogo chamado")
-  // manda para api de criar jogo...
-  const { jogoId } = await apiFetch('/api/jogos/criar', {
-    method: 'POST',
-    body: {
-      diaId: diaId.value,
-      grupoId: grupoId.value,
-      videoId: null
-    }
-  })
+  const {jogoId} = await useNovoJogo(diaId, grupoId)
   await navigateTo(`/jogos/${jogoId}`)
 }
+console.log(presencas)
 </script>
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
@@ -61,6 +54,11 @@ async function novoJogo() {
         <h2 class="text-xl font-bold">{{ `Jogos ${new Date(dia?.data).toLocaleDateString()}` }}</h2>
         <UBadge class="ml-auto" color="success" variant="soft">{{ jogosDiaGrupo.length }} Jogos</UBadge>
       </div>
+      <ul>
+        <li v-for="jogo in jogosDiaGrupo" :key="jogo.id">
+          {{ jogo.nome }}
+        </li>
+      </ul>
       <UButton color="primary" @click="novoJogo">Adicionar jogo</UButton>
     </UCard>
   </div>

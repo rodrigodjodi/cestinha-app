@@ -6,7 +6,6 @@ const props = defineProps<{
 const route = useRoute()
 const grupoId = computed(() => route.params.grupo as string);
 const jogadores = useListaJogadores(grupoId)
-console.log(props.jogadorLogado)
 </script>
 
 <template>

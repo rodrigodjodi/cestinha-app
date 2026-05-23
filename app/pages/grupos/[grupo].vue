@@ -2,7 +2,6 @@
 import { doc, collection, where, query, limit } from 'firebase/firestore'
 import { useDocument } from 'vuefire'
 import CardJogadores from '~/components/CardJogadores.vue'
-import NovoJogo from '~/components/Dialogs/NovoJogo.vue'
 import { grupoSchema, type Grupo } from '~/schemas/grupo.schema'
 //composables
 const db = useFirestore()
@@ -10,19 +9,19 @@ const route = useRoute()
 const pageTitle = useState('pageTitle')
 const user = useCurrentUser()
 // estado
+const grupoId = computed(() => route.params.grupo as string)
 const q = computed(() => {
   if (!user.value) {
     return null
   }
   return query(collection(db, 'jogadores'),
     where('usuarioId', '==', user.value?.uid),
-    where('grupoId', '==', route.params.grupo as string
+    where('grupoId', '==', grupoId.value
     ), limit(1))
 })
 const jogadorLogado = useCollection(q)
 console.log("jogador logado: ", jogadorLogado)
-const grupoId = route.params.grupo as string
-const docRefGrupo = computed(() => doc(db, 'grupos', grupoId))
+const docRefGrupo = computed(() => doc(db, 'grupos', grupoId.value))
 const grupo = useDocument(docRefGrupo)
 // SEO
 useHead({ title: grupo.value?.nome }) // esse título para a aba do navegador: Titulo - Cestinha
@@ -34,11 +33,11 @@ pageTitle.value = grupo.value?.nome
     <h1 class="text-2xl font-bold mb-6">{{ pageTitle }}</h1>
 
     <!-- paniel Dias -->
-    <CardDiasGrupo />
+    <CardDiasGrupo :grupoId="grupoId"/>
 
 
     <!-- card Jogoadores -->
-    <CardJogadores :jogadorLogado="jogadorLogado[0]" />
+    <CardJogadores :jogadorLogado="jogadorLogado?.[0]" />
 
     <p>Nesta página: </p>
     <ol>
