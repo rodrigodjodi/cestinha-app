@@ -4,6 +4,7 @@ import {type Jogador }  from '@/schemas/jogador.schema'
 import {type Escalacao }  from '@/schemas/jogo.schema'
 import { deleteField } from 'firebase/firestore'
 import { useElementSize } from '@vueuse/core'
+import { VueDraggableNext, type DragEvent } from 'vue-draggable-next'
 const props = defineProps<{
   presencas: Presenca[]
   jogadores: Jogador[],
@@ -67,14 +68,14 @@ function toggleJogador(id: string, colecao: Colecao) {
   }
   console.log('selecionados: ', selecionados.value)
 }
-
+type AtualizacaoEscalacao = Record<string, { time: 'A' | 'B', ordem?: number }>
 async function mover(origem:Colecao, destino: Colecao) {
   console.log('origem: ', origem)
   console.log('destino: ', destino)
   console.log('selecionados: ', selecionados)
   const ids = selecionados.value[origem]
   if (!ids.size) return
-  const updates = {}
+  const updates: AtualizacaoEscalacao = {}
   for (const id of ids) {
     // indo para banco = remove da escalacao
     if (destino === 'banco') {
@@ -97,6 +98,25 @@ const compact = computed(() => height.value < 140)
 watch(height, value => {
   console.log(value)
 })
+async function handleDragChange(ev: DragEvent) {
+  // console.log('added change: ', ev)
+  const destino = ev.to.dataset.colecao
+  console.log('colecao destino: ', destino)
+  const jogadorId = ev.item.dataset.jogadorId
+  console.log('id jogador: ', jogadorId)
+  if (!destino || !jogadorId) return
+   const updates: AtualizacaoEscalacao = {}
+
+  if (destino === 'banco') {
+    updates[`escalacao.${jogadorId}`] = deleteField()
+  } else {
+    updates[`escalacao.${jogadorId}`] = {
+      time: destino
+    }
+  }
+
+  await useJogoStore().gravarEscalacao(updates)
+}
 </script>
 
 <template>
@@ -131,6 +151,7 @@ watch(height, value => {
         :banco="selecionados.banco"
         @toggle="(id)=>toggleJogador(id, 'A')"
         @mover="mover"
+        @add="handleDragChange"
       />
 
       <!-- AÇÕES -->
@@ -171,6 +192,7 @@ watch(height, value => {
         :banco="selecionados.banco"
         @toggle="(id)=>toggleJogador(id, 'B')"
         @mover="mover"
+        @add="handleDragChange"
       />
     </div>
 
@@ -191,12 +213,16 @@ watch(height, value => {
       <!-- eu preciso de que ssa div estique até preencher a tela -->
       <!-- daí sim eu consigo ler a sual altura -->
       <div ref="bancoRef" class="flex-1 min-h-0">
-        <TransitionGroup
-        
-          name="jogadores"
+        <vue-draggable-next
+          :model-value="banco"
+          group="jogadores"
           tag="div"
+          :sort="false" 
           class="flex gap-2 basis-30"
           :class="[compact ? 'overflow-x-auto' : 'flex-wrap']"
+          @add="handleDragChange"
+          item-key="id"
+          data-colecao="banco"
         >
           <ItemJogadorSelecao
             v-for="jogador in banco"
@@ -204,8 +230,9 @@ watch(height, value => {
             :jogador="jogador"
             :selected="selecionados.banco.has(jogador.id)"
             @toggle="toggleJogador(jogador.id, 'banco')"
+            :data-jogador-id="jogador.id"
           />
-        </TransitionGroup>
+        </vue-draggable-next>
       </div>
     </div>
   </UCard>

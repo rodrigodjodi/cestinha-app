@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { beep, multiBeep } from "@/utils/beep"
 const jogoStore = useJogoStore()
 const { status, iniciadoEm, pausadoEm, jogo } = storeToRefs(jogoStore)
 const emit = defineEmits<{
@@ -84,8 +84,12 @@ const tempoFormatado = computed(() => {
  */
 async function iniciar() {
   await jogoStore.iniciar()
-
   iniciarTicker()
+  beep({
+    frequency: 980,
+    duration: 300,
+    type: 'sine'
+  })
 }
 
 /**
@@ -93,6 +97,11 @@ async function iniciar() {
  */
 async function pausar() {
   await jogoStore.pausar()
+  beep({
+    frequency: 980,
+    duration: 150,
+    type: 'sine'
+  })
 }
 
 /**
@@ -103,22 +112,41 @@ function retomar() {
   const now = Date.now()
   tempoPausadoTotal.value +=
     now - pausadoEm.value
-  agora.value = now
-  jogoStore.retomar()
+  // agora.value = now
+  
+  jogoStore.retomar()?.then(() => {
+    iniciarTicker()
+    beep({
+    frequency: 980,
+    duration: 150,
+    type: 'sine'
+  })
+  })
 }
 
 function finalizar() {
-  jogoStore.finalizar()
-  pararTicker()
+  jogoStore.finalizar()?.then(() => {
+    pararTicker()
+    multiBeep({
+      frequency: 1200,
+      duration: 100,
+      volume: 0.5,
+      type: 'sawtooth',
+      count: 20,
+      interval: 120
+    })
+  })
 }
 
 async function reiniciar() {
-  await jogoStore.reiniciar()
-  tempoPausadoTotal.value = 0
+  jogoStore.reiniciar()?.then(()=> {
+    pararTicker()
+    tempoPausadoTotal.value = 0
+    agora.value = null
+  })
 
-  agora.value = Date.now()
+  // agora.value = Date.now()
 
-  pararTicker()
 }
 function novoJogo() {
   if (!jogo.value) return
@@ -131,6 +159,7 @@ function handleTimerClick() {
   switch (status.value) {
     case '0.ocioso':
       iniciar()
+   
       break
 
     case '1.rodando':
@@ -170,6 +199,20 @@ onBeforeUnmount(() => {
   stopWatch()
 })
 const showNewGameModal = ref(false)
+const colorClass= computed(()=>{
+  switch (status.value) {
+    case '0.ocioso':
+      return 'text-gray-500'
+    case '1.rodando':
+      return 'text-green-500'
+    case '2.pausado':
+      return 'text-yellow-500'
+    case '3.finalizado':
+      return 'text-red-500'
+    default:
+      return ''
+  }
+})
 </script>
 
 <template>
@@ -177,7 +220,7 @@ const showNewGameModal = ref(false)
 
     <!-- TIMER -->
     <button class="flex-1 flex items-center justify-center" @click="handleTimerClick">
-      <span class="text-7xl font-bold tabular-nums">
+      <span class="text-[120px] font-bold tabular-nums" :class="colorClass">
         {{ tempoFormatado }}
       </span>
     </button>

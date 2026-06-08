@@ -1,50 +1,44 @@
 <script setup lang="ts">
-import { doc, collection, where, query, limit } from 'firebase/firestore'
-import { useDocument } from 'vuefire'
-import CardJogadores from '~/components/CardJogadores.vue'
-import { grupoSchema, type Grupo } from '~/schemas/grupo.schema'
 //composables
-const db = useFirestore()
 const route = useRoute()
+const { grupo, pending, error, notFound, errosParseGrupo } = useGrupo(route.params.grupo as string)
 const pageTitle = useState('pageTitle')
-const user = useCurrentUser()
 // estado
-const grupoId = computed(() => route.params.grupo as string)
-const q = computed(() => {
-  if (!user.value) {
-    return null
-  }
-  return query(collection(db, 'jogadores'),
-    where('usuarioId', '==', user.value?.uid),
-    where('grupoId', '==', grupoId.value
-    ), limit(1))
-})
-const jogadorLogado = useCollection(q)
-console.log("jogador logado: ", jogadorLogado)
-const docRefGrupo = computed(() => doc(db, 'grupos', grupoId.value))
-const grupo = useDocument(docRefGrupo)
+console.log('Grupo carregado:', grupo)
+const grupoId = computed(() => grupo.value?.id)
+const { jogadorLogado } = useJogadorLogado(grupoId)
+const { jogadores } = useListaJogadores(grupoId)
 // SEO
 useHead({ title: grupo.value?.nome }) // esse título para a aba do navegador: Titulo - Cestinha
 pageTitle.value = grupo.value?.nome
-
 </script>
+
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-6">{{ pageTitle }}</h1>
-
+  <h1 class="text-2xl font-bold mb-6">{{ pageTitle }}</h1>
+  <div v-if="pending">
+    <div class="grid gap-4 md:grid-cols-2">
+      <USkeleton class="h-24 mb-3" v-for="i in 3" :key="i" />
+    </div>
+  </div>
+  <div v-else-if="error">
+    <UCard>
+      <p class="text-gray-500">
+        Ocorreu um erro ao carregar o grupo. Por favor, tente novamente mais tarde.
+      </p>
+    </UCard>
+  </div>
+  <div v-else-if="notFound">
+    <UCard>
+      <p class="text-gray-500">
+        Grupo não encontrado.
+      </p>
+    </UCard>
+  </div>
+  <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
     <!-- paniel Dias -->
-    <CardDiasGrupo :grupoId="grupoId"/>
-
-
+    <CardDiasGrupo :grupoId="grupo?.id" />
     <!-- card Jogoadores -->
-    <CardJogadores :jogadorLogado="jogadorLogado?.[0]" />
-
-    <p>Nesta página: </p>
-    <ol>
-      <li>painel jogos: lista de jogos, botão novo jogo</li>
-      <li>painel jogadores: lista de jogadores, botão novo jogador</li>
-    </ol>
-    <pre>{{ grupo }}</pre>
+    <CardJogadores :jogadorLogado="jogadorLogado" :jogadores="jogadores" />
 
   </div>
 </template>

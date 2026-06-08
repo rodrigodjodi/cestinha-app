@@ -3,14 +3,13 @@ import { baseJogadorSchema, type CriacaoJogador, type Jogador } from '~/schemas/
 import type { FormSubmitEvent, FormErrorEvent } from "@nuxt/ui";
 import { apiFetch } from '@/services/apiFetch'
 const props = defineProps<{
-  grupoId: string,
   jogadorLogado: MaybeRefOrGetter<Jogador | null>
 }>()
 
 // state
 const criacaoJogadorFormState = reactive<Partial<CriacaoJogador>>({
   nome: "",
-  grupoId: props.grupoId,
+  grupoId: props.jogadorLogado?.grupoId,
   usuarioId: null,
   atribuicao: 'avulso'
 });
@@ -46,17 +45,20 @@ const items = computed(()=>[
 </script>
 
 <template>
-  <UForm :schema="baseJogadorSchema" :state="criacaoJogadorFormState" @submit.prevent="criarJogador"
-  :disabled="props.jogadorLogado?.atribuicao === 'avulso'" @error="handleFormError">
+  <UForm :schema="baseJogadorSchema" :state="criacaoJogadorFormState" 
+    @submit.prevent="criarJogador"
+    :disabled="props.jogadorLogado?.atribuicao === 'avulso'"
+    @error="handleFormError"
+  >
     <UFormField label="Novo jogador" name="nome" :error="serverErrors.nome">
-      <UInput placeholder="Apelido novo jogador..." size="xl" v-model="criacaoJogadorFormState.nome"
-      >
+      <UInput placeholder="Apelido novo jogador..." v-model="criacaoJogadorFormState.nome">
         <template #trailing>
-          <!-- <UButton icon="i-lucide-plus" size="xs" type="submit" :disabled="!nomeJogadorValido"
-            class="disabled:opacity-40" /> -->
         </template>
       </UInput>
+      <UButton icon="i-lucide-plus" size="xs" type="submit" :disabled="!nomeJogadorValido"
+        class="disabled:opacity-40 ml-3" />
     </UFormField>
-    <URadioGroup v-model="criacaoJogadorFormState.atribuicao" class="mt-2" orientation="horizontal" variant="list"  :items="items" />
+    <URadioGroup v-model="criacaoJogadorFormState.atribuicao" class="mt-2"
+      orientation="horizontal" variant="list"  :items="items" />
   </UForm>
 </template>

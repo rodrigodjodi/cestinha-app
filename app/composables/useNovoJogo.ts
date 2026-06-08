@@ -12,8 +12,9 @@ export default async function useNovoJogo(
     iniciadoEm: null,
     pausadoEm: null,
     escalacao: null,
+    finalizadoEm: null
   };
-  // console.log("payload ", payload);
+  console.log("[useNovoJogo]payload ", payload);
   return apiFetch<{ jogoId: string }>("/api/jogos/criar", {
     method: "POST",
     body: payload,

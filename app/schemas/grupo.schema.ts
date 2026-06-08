@@ -5,7 +5,9 @@ const baseGrupoSchema = z.object({
 
 export const grupoSchema = baseGrupoSchema.extend({
   criadoPor: z.string().min(1),
-  usuarios: z.array(z.string().min(1)).min(1)
+  usuarios: z.array(z.string().min(1)).min(1),
+  id: z.string().min(1),
+  convite: z.string().min(1),
 })
 export const criacaoGrupoSchema = baseGrupoSchema.extend({
   apelido: z.string('O apelido é obrigatório').min(2, 'O apelido deve ter pelo menos 2 caracteres'),

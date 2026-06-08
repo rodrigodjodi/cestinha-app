@@ -3,6 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore'
 import Scoreboard from '~/components/Scoreboard.vue'
 import {type Jogo } from "@/schemas/jogo.schema"
 import CardTimes from '~/components/CardTimes.vue'
+import { initAudio } from "@/utils/beep"
 const db = useFirestore()
 const route = useRoute()
 const jogoStore = useJogoStore()
@@ -34,7 +35,7 @@ console.log(presencas)
     </template>
 </UModal>
 <UModal v-model:open="scoreboardOpen" fullscreen >
-    <UButton v-if="!jogo?.videoId" >Abrir placar</UButton>
+    <UButton v-if="!jogo?.videoId" @click="initAudio">Abrir placar</UButton>
     <template #content>
         <Scoreboard @close="scoreboardOpen = false"/>
     </template>

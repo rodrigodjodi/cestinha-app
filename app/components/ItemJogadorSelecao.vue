@@ -3,8 +3,8 @@ defineProps<{
   jogador: {
     id: string
     nome: string
-    subtitulo?: string
   }
+  subtitulo?: string
   selected?: boolean
 }>()
 
@@ -34,8 +34,8 @@ defineEmits<{
           {{ jogador.nome }}
         </p>
 
-        <p class="text-muted text-xs">
-          {{ jogador.subtitulo || 'Jogador' }}
+        <p class="text-muted text-xs capitalize">
+          {{ subtitulo || 'Jogador' }}
         </p>
       </div>
     </div>

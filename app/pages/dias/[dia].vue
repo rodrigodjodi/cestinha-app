@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-import { z } from 'zod' 
-import { baseJogoSchema, type BaseJogo } from '~/schemas/jogo.schema'
 const db = useFirestore()
 const route = useRoute()
 const user = useCurrentUser()
@@ -10,7 +8,7 @@ const diaId = computed(() => dia.value?.id)
 const grupoId = computed(() => dia.value?.grupoId)
 // console.log('diaId', diaId, 'grupoId', grupoId)
 const presencas = useListaPresencasDiaGrupo(diaId, grupoId)
-const jogadores = useListaJogadores(grupoId)
+const {jogadores} = useListaJogadores(grupoId)
 const jogadorLogado = computed(() => jogadores.value.find(el => el.usuarioId === user.value?.uid))
 const confirmados = computed(() => presencas.value.filter(presenca => presenca.situacao === '0.confirmado'))
 const emEspera = computed(() => presencas.value.filter(presenca => presenca.situacao === '1.espera'))
@@ -19,14 +17,14 @@ async function novoJogo() {
   const {jogoId} = await useNovoJogo(diaId, grupoId)
   await navigateTo(`/jogos/${jogoId}`)
 }
-console.log(presencas)
+
 </script>
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
     <!-- CARD PRESENCAS -->
     <UCard>
       <div class="flex flex-row mb-4">
-        <h2 class="text-xl font-bold">{{ `Lista ${new Date(dia?.data).toLocaleDateString()}` }}</h2>
+        <h2 class="text-xl font-bold"> Lista</h2>
         <UBadge class="ml-auto" color="success" variant="soft">{{ confirmados.length }} Confirmados</UBadge>
         <UBadge class="ml-4" color="warning" variant="soft">{{ emEspera.length }} Espera</UBadge>
       </div>
@@ -51,14 +49,15 @@ console.log(presencas)
     <!-- CARD JOGOS  -->
     <UCard>
       <div class="flex flex-row mb-4">
-        <h2 class="text-xl font-bold">{{ `Jogos ${new Date(dia?.data).toLocaleDateString()}` }}</h2>
+        <h2 class="text-xl font-bold"> Jogos  </h2>
         <UBadge class="ml-auto" color="success" variant="soft">{{ jogosDiaGrupo.length }} Jogos</UBadge>
       </div>
-      <ul>
-        <li v-for="jogo in jogosDiaGrupo" :key="jogo.id">
+      <div class="flex flex-col">
+        <nuxt-link v-for="jogo in jogosDiaGrupo" :key="jogo.id" :to="`/jogos/${jogo.id}`"
+         class="p-2 border rounded mb-2 hover:bg-accented">
           {{ jogo.nome }}
-        </li>
-      </ul>
+        </nuxt-link>
+      </div>
       <UButton color="primary" @click="novoJogo">Adicionar jogo</UButton>
     </UCard>
   </div>

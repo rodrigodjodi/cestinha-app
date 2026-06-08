@@ -38,6 +38,7 @@ export const useJogoStore = defineStore("jogo", () => {
     return updateDoc(docRefJogo, {
       status: "3.finalizado",
       pausadoEm: null,
+      finalizadoEm: serverTimestamp(),
     });
   }
 
@@ -48,6 +49,7 @@ export const useJogoStore = defineStore("jogo", () => {
       status: "0.ocioso",
       iniciadoEm: null,
       pausadoEm: null,
+      finalizadoEm: null,
     });
   }
   function limparStore() {
@@ -74,5 +76,6 @@ export const useJogoStore = defineStore("jogo", () => {
     status: computed(() => jogo.value?.status),
     iniciadoEm: computed(() => jogo.value?.iniciadoEm?.toMillis()),
     pausadoEm: computed(() => jogo.value?.pausadoEm?.toMillis()),
+    finalizadoEm: computed(() => jogo.value?.finalizadoEm?.toMillis()),
   };
 });

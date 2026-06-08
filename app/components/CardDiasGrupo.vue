@@ -9,19 +9,19 @@ const props = defineProps<{
 usando uma prop eu posso consultar calendários de vários grupos numa mesma página*/
  
 import { doc, setDoc, collection, deleteDoc } from 'firebase/firestore'
-import { CalendarDate, type DateValue } from '@internationalized/date'
+import { CalendarDate } from '@internationalized/date'
 const db = useFirestore()
-const route = useRoute()
 const diaSelecionado = shallowRef<CalendarDate>()
 async function criarDia() {
   const diaRef = doc(collection(db, 'dias'))
   const payload = baseDiaSchema.parse({
     grupoId: toValue(props.grupoId),
-    data: diaSelecionado.value?.toString() // todo: adicionar status
+    data: diaSelecionado.value?.toString()
+    //  status e numJogos vem dos defaults do schema
   })
   console.log(payload)
-  /* await setDoc(diaRef, payload) // todo: mover para rota /api/dias/criar
-  await navigateTo(`/dias/${idDiaSelecionado.value}`) */
+  await setDoc(diaRef, payload) // todo: mover para rota /api/dias/criar
+  await navigateTo(`/dias/${idDiaSelecionado.value}`)
 }
 const diasGrupo = useListaDiasGrupo(props.grupoId)
 const listaDatas = computed(()=>diasGrupo.value.map(el=>el.data))
@@ -47,7 +47,7 @@ async function excluirDia(){
 </script>
 
 <template>
-  <UCard title="Calendário Grupo">
+  <UCard title="Calendário">
     <UCalendar v-model="diaSelecionado">
       <template #day="{ day }">
         <UChip :show="diaTeveJogo(day.toString())" >

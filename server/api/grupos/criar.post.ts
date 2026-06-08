@@ -2,6 +2,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "#server/utils/firebase-admin";
 import { criacaoGrupoSchema } from "@/schemas/grupo.schema";
 import { baseJogadorSchema } from '@/schemas/jogador.schema'
+import { nanoid } from "nanoid";
 export default defineEventHandler(async (event) => {
   // 1. header
   const authorization = getHeader(event, "authorization");
@@ -31,7 +32,8 @@ export default defineEventHandler(async (event) => {
       nome: payload.nome,
       usuarios: [decodedToken.uid],
       criadoPor: decodedToken.uid,
-      criadoEm: now
+      criadoEm: now,
+      convite: nanoid(10),
     }
     transaction.set(grupoRef, grupo)
     // 6.2 jogador
@@ -40,7 +42,7 @@ export default defineEventHandler(async (event) => {
       nome: payload.apelido,
       grupoId: grupoRef.id,
       usuarioId: decodedToken.uid,
-      atribuicao: 'admin'
+      atribuicao: 'admin',
     })
     transaction.set(jogadorRef, {...jogador, criadoEm: now})
 

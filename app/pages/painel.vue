@@ -1,28 +1,27 @@
 <script setup lang="ts">
 // middleware
-definePageMeta({
-  middleware: ['auth']
-})
-
+definePageMeta({middleware: ['auth']})
 // composables
 const pageTitle = useState('pageTitle')
 // stores
-const usuarioStore = useUsuarioStore()
-
 useHead({ title: 'Painel do usuário' }) // esse título para a aba do navegador: Meus Grupos - Cestinha
 // estado
-const { usuario, uid } = storeToRefs(usuarioStore)
-pageTitle.value = 'Painel de ' + usuario.value?.nome
-const { grupos, loading } = useGruposDoUsuario()
-const mostrarModalCriarGrupo = ref(false)
+const { grupos, pending, errosParseGrupo } = useGruposUsuario()
 
+
+
+
+const mostrarModalCriarGrupo = ref(false)
 </script>
 
 <template>
   <UContainer class="py-6">
     <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Meus grupos</h1>
-
+      <div class="flex flex-col">
+        <h1 class="text-2xl font-bold">Meus grupos</h1>
+        <span v-if="errosParseGrupo.length > 0" class="text-sm text-error-500" >Grupos não listados</span>
+      </div>
+       
       <UModal title="Novo Grupo" v-model:open="mostrarModalCriarGrupo">
         <UButton icon="i-lucide-plus" label="Novo Grupo" color="primary"  />
         <template #body>
@@ -32,8 +31,10 @@ const mostrarModalCriarGrupo = ref(false)
       </UModal>
     </div>
 
-    <div v-if="loading">
-      <USkeleton class="h-24 mb-3" v-for="i in 3" :key="i" />
+    <div v-if="pending">
+      <div class="grid gap-4 md:grid-cols-2">
+        <USkeleton class="h-24 mb-3" v-for="i in 3" :key="i" />
+      </div>
     </div>
 
     <div v-else-if="grupos.length === 0">
@@ -44,18 +45,22 @@ const mostrarModalCriarGrupo = ref(false)
       </UCard>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <UCard v-for="grupo in grupos" :key="grupo?.id" class="cursor-pointer hover:shadow-lg transition"
-        @click="navigateTo(`/grupos/${grupo?.id}`)">
+    <div class="grid gap-4 md:grid-cols-2">
+      <UCard v-for="grupo in grupos" :key="grupo?.id"
+        class=" hover:shadow-lg transition"
+        >
         <template #header>
-          <h2 class="font-semibold text-lg">
+          <NuxtLink as="h2" class="font-semibold text-lg hover:text-info-500"
+            :to="`/grupos/${grupo?.id}`">
             {{ grupo?.nome }}
-          </h2>
+          </NuxtLink>
         </template>
 
         <p class="text-sm text-gray-500">
           {{ grupo?.usuarios.length }} participante(s)
         </p>
+        <p>Link de convite:</p>
+        <UInput class="w-80" :value="`https://cestinha.app.br/convites/${grupo?.convite}`"/>
       </UCard>
     </div>
   </UContainer>

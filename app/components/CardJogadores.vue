@@ -1,31 +1,54 @@
 <script setup lang="ts">
 import type { Jogador } from '~/schemas/jogador.schema';
 const props = defineProps<{
-  jogadorLogado: MaybeRefOrGetter<Jogador | null>
+  jogadorLogado: MaybeRefOrGetter<Jogador>
+  jogadores: MaybeRefOrGetter<Jogador[]>
 }>()
-const route = useRoute()
-const grupoId = computed(() => route.params.grupo as string);
-const jogadores = useListaJogadores(grupoId)
+const modalJogador = ref(false)
+const jogadoresOrdenados = computed(() => {
+  // primeiro admins, depois membros, depois avulsos, alfabético dentro desses grupos
+  return [...toValue(props.jogadores)].sort((a, b) => {
+    const ordemA = a.atribuicao === 'admin' ? 0 : a.atribuicao === 'membro' ? 1 : 2;
+    const ordemB = b.atribuicao === 'admin' ? 0 : b.atribuicao === 'membro' ? 1 : 2;
+    if (ordemA !== ordemB) {
+      return ordemA - ordemB;
+    }
+    return a.nome.localeCompare(b.nome);
+  })
+})
+const jogadorSelecionadoId  = ref<string | null>(null)
+function openModalJogador(jogador: Jogador) {
+  console.log('abrir modal jogador', jogador)
+  jogadorSelecionadoId.value = jogador.id
+  modalJogador.value = true
+}
+const jogadorSelecionado = computed(() => {
+  if (!jogadorSelecionadoId.value) {
+    return null
+  }
+  return toValue(props.jogadores).find(
+    j => j.id === jogadorSelecionadoId.value
+  ) ?? null
+})
 </script>
 
 <template>
-  <UCard class="w-full max-w-lg" :ui="{body:'sm:p-4 flex flex-wrap'}">
-    <template #header>
+  <UCard class="w-full " :ui="{ body: 'sm:p-4 flex flex-wrap' }">
+    <div class="flex flex-row mb-4 w-full">
+        <h2 class="text font-bold"> Jogadores  </h2>
+        <UBadge class="ml-auto" color="success" variant="soft">{{ jogadores.length }} Jogadores</UBadge>
+      </div>
+    <div class="flex flex-wrap gap-2">
+      <ItemJogadorSelecao v-for="jogador in jogadoresOrdenados" :key="jogador.id" :jogador="jogador"
+        @toggle="openModalJogador(jogador)" :data-jogador-id="jogador.id"
+        :subtitulo="jogador.atribuicao"
+      />
       
-        <span class="text-lg font-semibold">Jogadores</span>
-      
-    </template>
-      
-          <UUser v-for="jogador in jogadores" :name="jogador.nome" :avatar="{icon:'i-lucide-user'}"
-          size="lg" :ui="{root:'m-2 '}">
-          <template #avatar>
-            <UAvatar icon="i-lucide-user" :class="[jogador.usuarioId ? 'border-2 border-green-400' : '']"/>
-          </template>
-          </UUser>
-
-      
+    </div>
     <template #footer>
-      <FormNovoJogador v-if="props.jogadorLogado?.atribuicao !== 'avulso'" :grupo-id="grupoId" :jogador-logado="jogadorLogado"/>
+      <FormNovoJogador v-if="props.jogadorLogado?.atribuicao !== 'avulso'"
+        :jogador-logado="jogadorLogado" />
     </template>
   </UCard>
+  <ModalEdicaoJogador :jogador="jogadorSelecionado" v-model:open="modalJogador" :jogadorLogado="props.jogadorLogado"/>
 </template>
