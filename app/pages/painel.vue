@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {useClipboard} from '@vueuse/core'
 // middleware
 definePageMeta({middleware: ['auth']})
 // composables
@@ -12,6 +13,7 @@ const { grupos, pending, errosParseGrupo } = useGruposUsuario()
 
 
 const mostrarModalCriarGrupo = ref(false)
+const {  copy, copied } = useClipboard()
 </script>
 
 <template>
@@ -25,7 +27,7 @@ const mostrarModalCriarGrupo = ref(false)
       <UModal title="Novo Grupo" v-model:open="mostrarModalCriarGrupo">
         <UButton icon="i-lucide-plus" label="Novo Grupo" color="primary"  />
         <template #body>
-          <p class="mb-4 text-dimmed">Um grupo será criado e você será adicionado como jogador.</p>
+          <p class="mb-4 text-dimmed">Um grupo será criado e você será adicionado como jogador admin.</p>
           <FormNovoGrupo @close="mostrarModalCriarGrupo = false"/>
         </template>
       </UModal>
@@ -45,7 +47,7 @@ const mostrarModalCriarGrupo = ref(false)
       </UCard>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div v-else class="grid gap-4 md:grid-cols-2">
       <UCard v-for="grupo in grupos" :key="grupo?.id"
         class=" hover:shadow-lg transition"
         >
@@ -60,7 +62,12 @@ const mostrarModalCriarGrupo = ref(false)
           {{ grupo?.usuarios.length }} participante(s)
         </p>
         <p>Link de convite:</p>
-        <UInput class="w-80" :value="`https://cestinha.app.br/convites/${grupo?.convite}`"/>
+        <span class="text-info-300">
+          {{`https://cestinha.app.br/convites/${grupo?.convite}`}}
+        </span>
+        <UButton :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'" size="sm" color="info" variant="solid"
+          class="ml-4" @click="copy(`https://cestinha.app.br/convites/${grupo?.convite}`)"
+          title="Copiar"/>
       </UCard>
     </div>
   </UContainer>

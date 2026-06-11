@@ -15,7 +15,6 @@ export default function () {
   // composables
   const auth = useFirebaseAuth();
   const route = useRoute();
-  const conviteToken = route.query.convite?.toString();
   const toast = useToast();
   // state
   const serverErrors = ref<Record<string, string>>({});

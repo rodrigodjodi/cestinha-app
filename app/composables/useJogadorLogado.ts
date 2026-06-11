@@ -29,22 +29,13 @@ export function useJogadorLogado(grupoId: MaybeRefOrGetter<string|undefined>) {
         return {doc: doc.raw, erroValidacao: doc.error }
       })
   })
-  const stopWatchNetworkError = watch(error, (err) => {
-    if (err) {
-      console.error('Erro ao carregar jogador logado:', err)
-      useToast().add({
-        color: 'error',
-        title: 'Erro',
-        description: 'Ocorreu um erro ao carregar o jogador logado. Por favor, tente novamente mais tarde.',
-      })
-    }
-  })
+  
   const stopWatchErrosParse = watch(errosParseJogador, (erros) => {
     // console.log(' Erros de conversão:', erros)
     if (erros.length > 0) {
       console.warn('Foram encontrados erros de conversão ao carregar o jogador logado:', erros)
     }
   })
-  onBeforeUnmount(() => {stopWatchNetworkError();stopWatchErrosParse()})
+  onBeforeUnmount(() => {stopWatchErrosParse()})
   return {jogadorLogado, pending, error, errosParseJogador}
 }

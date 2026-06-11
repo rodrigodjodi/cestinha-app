@@ -5,7 +5,7 @@ definePageMeta({ layout: 'login'})
 
 // composables
 const { loginFormState, carregando, serverErrors, handleFormError, entrar} = useFirebaseUser()
-
+const route = useRoute()
 </script>
 
 <template>
@@ -32,7 +32,8 @@ const { loginFormState, carregando, serverErrors, handleFormError, entrar} = use
 
       <template #footer>
         <div class="text-sm text-center">
-          Não tem conta? <NuxtLink to="/registrar" class="underline">Criar conta</NuxtLink>
+          Não tem conta? <NuxtLink :to="{path: '/registrar', query: { redirect: route.query.redirect }}"
+           class="underline">Criar conta</NuxtLink>
         </div>
         <div class="text-sm text-center">
           Esqueceu sua senha? <NuxtLink to="/redefinir-senha" class="underline">Redefinir senha</NuxtLink>

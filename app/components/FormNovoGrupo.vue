@@ -2,7 +2,7 @@
 import { criacaoGrupoSchema, type FormCriacaoGrupo } from '~/schemas/grupo.schema';
 import type { FormSubmitEvent } from "@nuxt/ui";
 
-const emits = defineEmits(['close'])
+const emit = defineEmits(['close'])
 const formState = reactive<Partial<FormCriacaoGrupo>>({
     nome: "",
     apelido: ""
@@ -19,7 +19,7 @@ async function criarGrupo(event: FormSubmitEvent<FormCriacaoGrupo>) {
         console.error("Erro ao criar grupo:", error)
     } finally {
         carregando.value = false
-        emits('close')
+        emit('close')
     }
 }
 function handleFormError(errors: any) {
@@ -28,7 +28,8 @@ function handleFormError(errors: any) {
 </script>
 
 <template>
-    <UForm :state="formState" :schema="criacaoGrupoSchema"   @submit.prevent="criarGrupo" @error="handleFormError">
+    <UForm :state="formState" :schema="criacaoGrupoSchema"
+        @submit.prevent="criarGrupo" @error="handleFormError">
         <UFormField label="Nome do grupo" class="mb-4" name="nome" >
             <UInput v-model="formState.nome"  />
         </UFormField>

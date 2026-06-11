@@ -17,8 +17,8 @@ export const useUsuarioStore = defineStore("usuario", () => {
     if (!firebaseUser.value) return null
     return doc(db, "usuarios", firebaseUser.value.uid)
   })
-
-  const usuarioRaw = useDocument(usuarioRef)
+  console.log('[store usuario] usuarioRef: ', usuarioRef)
+  const {data:usuarioRaw, pending, error} = useDocument(usuarioRef)
 
   const usuario = computed<Usuario | null>(() => {
     if (!usuarioRaw.value) return null
@@ -45,9 +45,9 @@ export const useUsuarioStore = defineStore("usuario", () => {
       }
       return setDoc(doc(db, "usuarios", firebaseUser.uid), payload)
   }
-  const uid = computed(() => firebaseUser.value?.uid)
+  
   
   return {
-    usuario, uid, criarUsuarioComFirebaseUser
+    usuario, criarUsuarioComFirebaseUser
   }
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+definePageMeta({middleware: ['auth']})
 //composables
 const route = useRoute()
 const { grupo, pending, error, notFound, errosParseGrupo } = useGrupo(route.params.grupo as string)
@@ -21,10 +22,12 @@ pageTitle.value = grupo.value?.nome
     </div>
   </div>
   <div v-else-if="error">
-    <UCard>
-      <p class="text-gray-500">
+    <UCard class="bg-error">
+      <p class="">
         Ocorreu um erro ao carregar o grupo. Por favor, tente novamente mais tarde.
+        <pre>{{ error }}</pre>
       </p>
+      <pre>{{ error.code }}</pre>
     </UCard>
   </div>
   <div v-else-if="notFound">
@@ -38,7 +41,7 @@ pageTitle.value = grupo.value?.nome
     <!-- paniel Dias -->
     <CardDiasGrupo :grupoId="grupo?.id" />
     <!-- card Jogoadores -->
-    <CardJogadores :jogadorLogado="jogadorLogado" :jogadores="jogadores" />
+    <CardJogadores :jogadorLogado="jogadorLogado" :jogadores="jogadores" :grupoId="grupo!.id" />
 
   </div>
 </template>

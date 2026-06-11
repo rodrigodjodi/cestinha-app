@@ -2,10 +2,9 @@ import { doc } from "firebase/firestore";
 import { grupoConverter } from "~/firebase/grupoConverter";
 export function useGrupo(grupoId: string) {
   const db = useFirestore();
-  const route = useRoute();
   const docRefGrupo = doc(db, "grupos", grupoId).withConverter(grupoConverter);
   const { data, pending, error } = useDocument(docRefGrupo);
-  console.log(data);
+  
   const grupo = computed(() => {
     return data.value?.valid ? data.value.grupo : null;
   });

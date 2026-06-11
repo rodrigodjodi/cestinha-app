@@ -4,20 +4,20 @@ import type { FormSubmitEvent, FormErrorEvent } from "@nuxt/ui";
 import { apiFetch } from '@/services/apiFetch'
 const props = defineProps<{
   jogadorLogado: MaybeRefOrGetter<Jogador | null>
+  grupoId: string
 }>()
-
+console.log(props.jogadorLogado)
 // state
 const criacaoJogadorFormState = reactive<Partial<CriacaoJogador>>({
   nome: "",
-  grupoId: props.jogadorLogado?.grupoId,
+  grupoId: props.grupoId,
   usuarioId: null,
   atribuicao: 'avulso'
 });
 const serverErrors = ref<Record<string, string>>({});
 // computed
-const nomeJogadorValido = computed(() => {
-  return baseJogadorSchema.safeParse(criacaoJogadorFormState).success
-})
+
+
 // actions
 async function criarJogador(event: FormSubmitEvent<CriacaoJogador>) {
   serverErrors.value = {}
@@ -55,7 +55,7 @@ const items = computed(()=>[
         <template #trailing>
         </template>
       </UInput>
-      <UButton icon="i-lucide-plus" size="xs" type="submit" :disabled="!nomeJogadorValido"
+      <UButton icon="i-lucide-plus" size="xs" type="submit" 
         class="disabled:opacity-40 ml-3" />
     </UFormField>
     <URadioGroup v-model="criacaoJogadorFormState.atribuicao" class="mt-2"

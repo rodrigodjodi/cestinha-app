@@ -1,57 +1,66 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "#server/utils/firebase-admin";
 import { criacaoGrupoSchema } from "@/schemas/grupo.schema";
-import { baseJogadorSchema } from '@/schemas/jogador.schema'
-import { nanoid } from "nanoid";
+import { baseJogadorSchema } from "@/schemas/jogador.schema";
 export default defineEventHandler(async (event) => {
   // 1. header
   const authorization = getHeader(event, "authorization");
-  if (!authorization?.startsWith('Bearer ')) {
+  if (!authorization?.startsWith("Bearer ")) {
     throw createError({ statusCode: 401, statusMessage: "Não autenticado" });
   }
   // 2.token
-  const token = authorization.replace('Bearer ', '')
+  const token = authorization.replace("Bearer ", "");
   // 3. firebase auth
-  const decodedToken = await adminAuth.verifyIdToken(token)
+  const decodedToken = await adminAuth.verifyIdToken(token);
   // 4. body
-  const body = await readBody(event)
-  console.log(body)
+  const body = await readBody(event);
+  console.log(body);
   // 5. zod
-  const validacao = criacaoGrupoSchema.safeParse(body)
-   if (!validacao.success) throw createError({
-    statusCode: 400,
-    statusMessage: 'Dados inválidos'
-  })
-  const payload = validacao.data
-  // 6. transaction: se grupo ou usuário falhar, nada é criado
-  const result = await adminDb.runTransaction(async (transaction)=>{
-    const now = Timestamp.now()
+  const validacao = criacaoGrupoSchema.safeParse(body);
+  if (!validacao.success)
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Dados inválidos",
+    });
+  const payloadGrupo = validacao.data;
+  // 6. batch: se grupo ou usuário ou convite falhar, nada é criado
+  const now = Timestamp.now();
+  const grupoRef = adminDb.collection("grupos").doc();
+  const jogadorRef = adminDb.collection("jogadores").doc();
+  const conviteRef = adminDb.collection("convites").doc();
+  try {
+
+    const batch = adminDb.batch();
     // 6.1 grupo
-    const grupoRef = adminDb.collection('grupos').doc()
     const grupo = {
-      nome: payload.nome,
+      nome: payloadGrupo.nome,
       usuarios: [decodedToken.uid],
       criadoPor: decodedToken.uid,
       criadoEm: now,
-      convite: nanoid(10),
-    }
-    transaction.set(grupoRef, grupo)
+    };
+    batch.set(grupoRef, grupo);
     // 6.2 jogador
-    const jogadorRef = adminDb.collection('jogadores').doc()
     const jogador = baseJogadorSchema.parse({
-      nome: payload.apelido,
+      nome: payloadGrupo.apelido,
       grupoId: grupoRef.id,
       usuarioId: decodedToken.uid,
-      atribuicao: 'admin',
-    })
-    transaction.set(jogadorRef, {...jogador, criadoEm: now})
-
-    return {
+      atribuicao: "admin",
+    });
+    batch.set(jogadorRef, { ...jogador, criadoEm: now });
+    // 6.3 convite
+    const payloadConvite = {
       grupoId: grupoRef.id,
-      jogadorId: jogadorRef.id,
-    }
-  })
-  
+      criadoEm: now,
+    };
+    batch.set(conviteRef, payloadConvite)
+    await batch.commit();
+  } catch (error) {
+    throw error
+  }
   // 7. resposta
-  return result
+  return {
+    grupoId: grupoRef.id,
+    jogadadorId: jogadorRef.id,
+    conviteId: conviteRef.id,
+  };
 });

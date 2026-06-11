@@ -3,6 +3,7 @@ import type { Jogador } from '~/schemas/jogador.schema';
 const props = defineProps<{
   jogadorLogado: MaybeRefOrGetter<Jogador>
   jogadores: MaybeRefOrGetter<Jogador[]>
+  grupoId: string
 }>()
 const modalJogador = ref(false)
 const jogadoresOrdenados = computed(() => {
@@ -47,7 +48,7 @@ const jogadorSelecionado = computed(() => {
     </div>
     <template #footer>
       <FormNovoJogador v-if="props.jogadorLogado?.atribuicao !== 'avulso'"
-        :jogador-logado="jogadorLogado" />
+        :jogadorLogado="jogadorLogado" :grupoId="props.grupoId" />
     </template>
   </UCard>
   <ModalEdicaoJogador :jogador="jogadorSelecionado" v-model:open="modalJogador" :jogadorLogado="props.jogadorLogado"/>

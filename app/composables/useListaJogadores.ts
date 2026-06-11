@@ -26,7 +26,7 @@ export function useListaJogadores(grupoId: MaybeRefOrGetter<string|undefined>) {
         return {doc: doc.raw, erroValidacao: doc.error }
       })
   })
-  const stopWatchNetworkError = watch(error, (err) => {
+  /* const stopWatchNetworkError = watch(error, (err) => {
     if (err) {
       console.error('Erro ao carregar Jogadores:', err)
       useToast().add({
@@ -42,7 +42,7 @@ export function useListaJogadores(grupoId: MaybeRefOrGetter<string|undefined>) {
       console.warn('Foram encontrados erros de conversão ao carregar os jogadores:', erros)
     }
   })
-  onBeforeUnmount(() => {stopWatchNetworkError();stopWatchErrosParse()})
+  onBeforeUnmount(() => {stopWatchNetworkError();stopWatchErrosParse()}) */
 
   return {jogadores, pending, error, errosParseJogador}
 

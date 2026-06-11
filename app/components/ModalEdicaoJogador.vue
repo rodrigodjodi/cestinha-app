@@ -26,6 +26,7 @@ console.log('[modalEdicaoJogador] jogador recebido:', props.jogador)
     <template #footer>
       <URadioGroup class="mt-2" :modelValue="jogador?.atribuicao" orientation="horizontal" variant="list" :items="items"
         @update:modelValue="alterarAtribuicao(jogador, $event, jogadorLogado)" />
+        
     </template>
   </UModal>
 </template>
