@@ -3,19 +3,21 @@ definePageMeta({middleware: ['auth']})
 //composables
 const route = useRoute()
 const { grupo, pending, error, notFound, errosParseGrupo } = useGrupo(route.params.grupo as string)
-const pageTitle = useState('pageTitle')
+const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
 // estado
 console.log('Grupo carregado:', grupo)
 const grupoId = computed(() => grupo.value?.id)
 const { jogadorLogado } = useJogadorLogado(grupoId)
 const { jogadores } = useListaJogadores(grupoId)
 // SEO
-useHead({ title: grupo.value?.nome }) // esse título para a aba do navegador: Titulo - Cestinha
-pageTitle.value = grupo.value?.nome
+useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
+watchEffect(() => {
+  pageTitle.value = grupo.value?.nome ?? 'Carregando...'
+})
 </script>
 
 <template>
-  <h1 class="text-2xl font-bold mb-6">{{ pageTitle }}</h1>
+  <!-- <h1 class="text-2xl font-bold mb-6">{{ pageTitle }}</h1> -->
   <div v-if="pending">
     <div class="grid gap-4 md:grid-cols-2">
       <USkeleton class="h-24 mb-3" v-for="i in 3" :key="i" />
@@ -25,8 +27,9 @@ pageTitle.value = grupo.value?.nome
     <UCard class="bg-error">
       <p class="">
         Ocorreu um erro ao carregar o grupo. Por favor, tente novamente mais tarde.
-        <pre>{{ error }}</pre>
       </p>
+      <pre>{{ error }}</pre>
+
       <pre>{{ error.code }}</pre>
     </UCard>
   </div>
