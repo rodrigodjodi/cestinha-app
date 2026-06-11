@@ -50,7 +50,6 @@ export default function () {
       await updateProfile(userCredential.user, {
         displayName: event.data.nome,
       });
-      await useUsuarioStore().criarUsuarioComFirebaseUser(userCredential.user)
       const redirect = typeof route.query.redirect === 'string'
         ? route.query.redirect
         : '/painel'

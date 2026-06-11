@@ -7,8 +7,8 @@ const auth = useFirebaseAuth()
 const user = useCurrentUser()
 const route = useRoute()
 const { sair } = useFirebaseUser()
-const usuarioStore = useUsuarioStore()
-const { usuario } = storeToRefs(usuarioStore)
+
+
 
 const items = computed<NavigationMenuItem[]>(() => [{
   label: 'Painel',
@@ -42,7 +42,7 @@ const items = computed<NavigationMenuItem[]>(() => [{
     <UHeader title="Cestinha">
         <UNavigationMenu :items="[items]" />
         <template #right>
-            <UAvatar v-if="user" :name="usuario?.nome || usuario?.email" :alt="usuario?.nome"
+            <UAvatar v-if="user" :name="user.displayName || user.email" :alt="user.displayName!"
             @click="sair" />
         </template>
     </UHeader>

@@ -6,14 +6,12 @@ definePageMeta({
 
 // composables
 const pageTitle = useState('pageTitle')
-// stores
-const usuarioStore = useUsuarioStore()
 
 useHead({ title: 'Meus Grupos' }) // esse título para a aba do navegador: Meus Grupos - Cestinha
 // estado
-const { usuario, uid } = storeToRefs(usuarioStore)
+
 pageTitle.value = 'Meus Grupos'
-const { grupos, loading } = useGruposDoUsuario()
+const { grupos, pending } = useGruposUsuario()
 const mostrarModalCriarGrupo = ref(false)
 
 </script>
@@ -32,7 +30,7 @@ const mostrarModalCriarGrupo = ref(false)
       </UModal>
     </div>
 
-    <div v-if="loading">
+    <div v-if="pending">
       <USkeleton class="h-24 mb-3" v-for="i in 3" :key="i" />
     </div>
 
