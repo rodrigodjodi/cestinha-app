@@ -61,13 +61,13 @@ const {  copy, copied } = useClipboard()
         <p class="text-sm text-gray-500">
           {{ grupo?.usuarios.length }} participante(s)
         </p>
-        <p>Link de convite:</p>
+        <!-- <p>Link de convite:</p>
         <span class="text-info-300">
           {{`https://cestinha.app.br/convites/${grupo?.convite}`}}
         </span>
         <UButton :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'" size="sm" color="info" variant="solid"
           class="ml-4" @click="copy(`https://cestinha.app.br/convites/${grupo?.convite}`)"
-          title="Copiar"/>
+          title="Copiar"/> -->
       </UCard>
     </div>
   </UContainer>
