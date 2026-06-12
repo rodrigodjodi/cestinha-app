@@ -1,27 +1,30 @@
 <script setup lang="ts">
-import { baseDiaSchema } from '~/schemas/dia.schema';
+import { apiFetch } from "~/services/apiFetch";
+import { doc, setDoc, collection, deleteDoc } from 'firebase/firestore'
+import { CalendarDate } from '@internationalized/date'
 const props = defineProps<{
   /* diaId: MaybeRefOrGetter<string|undefined> */
   grupoId: MaybeRefOrGetter<string|undefined>
   
 }>()
-/* todo: deixei umas anotações para deixar o component menos acoplado,
-usando uma prop eu posso consultar calendários de vários grupos numa mesma página*/
- 
-import { doc, setDoc, collection, deleteDoc } from 'firebase/firestore'
-import { CalendarDate } from '@internationalized/date'
 const db = useFirestore()
 const diaSelecionado = shallowRef<CalendarDate>()
 async function criarDia() {
-  const diaRef = doc(collection(db, 'dias'))
-  const payload = baseDiaSchema.parse({
-    grupoId: toValue(props.grupoId),
-    data: diaSelecionado.value?.toString()
-    //  status e numJogos vem dos defaults do schema
-  })
-  console.log(payload)
-  await setDoc(diaRef, payload) // todo: mover para rota /api/dias/criar
-  await navigateTo(`/dias/${idDiaSelecionado.value}`)
+  const idDiaCriado = ref<string>()
+  try {
+    idDiaCriado.value = await apiFetch('/api/dias/criar', {
+      method: 'POST',
+      body: {
+        grupoId: toValue(props.grupoId),
+        data: diaSelecionado.value?.toString()
+      }
+    })
+  } catch (e) {
+    console.error(e)
+  } finally {
+    await navigateTo(`/dias/${idDiaCriado.value}`)
+  }
+  
 }
 const diasGrupo = useListaDiasGrupo(props.grupoId)
 const listaDatas = computed(()=>diasGrupo.value.map(el=>el.data))
@@ -47,7 +50,7 @@ async function excluirDia(){
 </script>
 
 <template>
-  <UCard title="Calendário">
+  <UCard title="Calendário" :ui="{footer:'flex gap-2 justify-end'}">
     <UCalendar v-model="diaSelecionado">
       <template #day="{ day }">
         <UChip :show="diaTeveJogo(day.toString())" >
@@ -56,7 +59,7 @@ async function excluirDia(){
       </template>
 
     </UCalendar>
-    <template #footer>
+    <template #footer >
       <UButton v-if="idDiaSelecionado" :disabled="!diaSelecionado"
         @click="excluirDia" color="error">
         Excluir dia

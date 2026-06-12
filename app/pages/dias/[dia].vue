@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { doc } from 'firebase/firestore'
-const db = useFirestore()
-const route = useRoute()
-const user = useCurrentUser()
-const dia = useDocument(doc(db, 'dias', route.params.dia as string))
+definePageMeta({middleware: ['auth']})
+const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
+  useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
+  const db = useFirestore()
+  const route = useRoute()
+  const user = useCurrentUser()
+  const dia = useDocument(doc(db, 'dias', route.params.dia as string))
+  watchEffect(() => {
+    pageTitle.value = dia.value?.data ?? 'Carregando...'
+  })
 const diaId = computed(() => dia.value?.id)
 const grupoId = computed(() => dia.value?.grupoId)
 // console.log('diaId', diaId, 'grupoId', grupoId)
@@ -29,6 +35,9 @@ async function novoJogo() {
         <UBadge class="ml-4" color="warning" variant="soft">{{ emEspera.length }} Espera</UBadge>
       </div>
       <BotaoConfirmacao :jogadorLogado="jogadorLogado" :diaId="diaId" :grupoId="grupoId" :presencas="presencas"/>
+      <FormInscricaoJogador v-if="jogadorLogado?.atribuicao === 'admin'" 
+        :dia-id="diaId" :grupo-id="grupoId" :jogadores="jogadores" :presencas="presencas"
+      />
       <!-- LISTAS -->
       <div>
         <label class="block text-sm font-medium text-gray-700">Jogadores confirmados</label>
@@ -42,9 +51,6 @@ async function novoJogo() {
       </div>
 
       <!-- ADICIONAR JOGADOR À LISTA (SÓ ADMIN) -->
-      <FormInscricaoJogador v-if="jogadorLogado?.atribuicao === 'admin'" 
-        :dia-id="diaId" :grupo-id="grupoId" :jogadores="jogadores" :presencas="presencas"
-      />
     </UCard>
     <!-- CARD JOGOS  -->
     <UCard>
