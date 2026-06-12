@@ -95,9 +95,6 @@ async function mover(origem:Colecao, destino: Colecao) {
 const container = useTemplateRef('bancoRef')
 const { height } = useElementSize(container)
 const compact = computed(() => height.value < 140)
-watch(height, value => {
-  console.log(value)
-})
 async function handleDragChange(ev: DragEvent) {
   // console.log('added change: ', ev)
   const destino = ev.to.dataset.colecao
