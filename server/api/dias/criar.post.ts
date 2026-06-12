@@ -26,7 +26,11 @@ export default defineEventHandler(async (event) => {
   // 6. gravacao
   const diaRef = adminDb.collection("dias").doc();
   try{
-    await diaRef.set(payload)
+    await diaRef.set({
+      ...payload,
+      criadoPor: decodedToken.uid,
+      criadoEm: Timestamp.now()
+    })
   } catch (error) {
     throw error
   } finally {

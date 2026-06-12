@@ -26,7 +26,8 @@ watchEffect(() => {
   <div v-else-if="error">
     <UCard class="bg-error">
       <p class="">
-        Ocorreu um erro ao carregar o grupo. Por favor, tente novamente mais tarde.
+        Ocorreu um erro ao carregar o grupo.
+        Por favor, tente novamente mais tarde.
       </p>
       <pre>{{ error }}</pre>
 

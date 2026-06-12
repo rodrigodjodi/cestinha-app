@@ -1,19 +1,17 @@
 <script setup lang="ts">
-import { doc } from 'firebase/firestore'
 definePageMeta({middleware: ['auth']})
 const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
   useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
-  const db = useFirestore()
   const route = useRoute()
   const user = useCurrentUser()
-  const dia = useDocument(doc(db, 'dias', route.params.dia as string))
+  const diaId = route.params.dia as string
+  const {dia} = useDia(diaId)
   watchEffect(() => {
     pageTitle.value = dia.value?.data ?? 'Carregando...'
   })
-const diaId = computed(() => dia.value?.id)
 const grupoId = computed(() => dia.value?.grupoId)
 // console.log('diaId', diaId, 'grupoId', grupoId)
-const presencas = useListaPresencasDiaGrupo(diaId, grupoId)
+const {presencas} = useListaPresencasDiaGrupo(diaId, grupoId)
 const {jogadores} = useListaJogadores(grupoId)
 const jogadorLogado = computed(() => jogadores.value.find(el => el.usuarioId === user.value?.uid))
 const confirmados = computed(() => presencas.value.filter(presenca => presenca.situacao === '0.confirmado'))
@@ -31,8 +29,8 @@ async function novoJogo() {
     <UCard>
       <div class="flex flex-row mb-4">
         <h2 class="text-xl font-bold"> Lista</h2>
-        <UBadge class="ml-auto" color="success" variant="soft">{{ confirmados.length }} Confirmados</UBadge>
-        <UBadge class="ml-4" color="warning" variant="soft">{{ emEspera.length }} Espera</UBadge>
+        <UBadge class="ml-auto" color="success" variant="soft">{{ confirmados?.length }} Confirmados</UBadge>
+        <UBadge class="ml-4" color="warning" variant="soft">{{ emEspera?.length }} Espera</UBadge>
       </div>
       <BotaoConfirmacao :jogadorLogado="jogadorLogado" :diaId="diaId" :grupoId="grupoId" :presencas="presencas"/>
       <FormInscricaoJogador v-if="jogadorLogado?.atribuicao === 'admin'" 

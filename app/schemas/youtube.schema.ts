@@ -19,6 +19,7 @@ function extrairYoutubeId(url: string): string | null {
 }
 
 export const youtubeSchema = z.object({
+  jogoId: z.string().min(1),
   videoUrl: z
     .string()
     .trim()

@@ -3,7 +3,6 @@ export async function apiFetch<T>(
   options: Parameters<typeof $fetch<T>>[1] = {}
 ) {
   const user = await getCurrentUser()
-
   const token = await user?.getIdToken()
 
   return $fetch<T>(path, {

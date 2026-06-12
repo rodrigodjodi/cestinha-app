@@ -24,19 +24,6 @@ const isLandscape = computed(() => {
         : 'timer-layout-portrait'
     "
   >
-    <!-- HEADER -->
-    <header class="header-zone">
-      <div class="header-title">
-        {{ jogoStore.jogo?.nome || 'Jogo 1' }}
-      </div>
-
-      <button
-        class="close-btn"
-        @click="emit('close')"
-      >
-        ✕
-      </button>
-    </header>
 
     <!-- SCORE -->
     <section class="score-zone">

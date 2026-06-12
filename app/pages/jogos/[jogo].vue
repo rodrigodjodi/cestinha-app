@@ -1,56 +1,58 @@
 <script setup lang="ts">
-import { doc, updateDoc } from 'firebase/firestore'   
-import Scoreboard from '~/components/Scoreboard.vue'
-import {type Jogo } from "@/schemas/jogo.schema"
-import CardTimes from '~/components/CardTimes.vue'
 import { initAudio } from "@/utils/beep"
-const db = useFirestore()
+definePageMeta({middleware: ['auth'], layout:'jogo'})
+const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
 const route = useRoute()
 const jogoStore = useJogoStore()
-const jogoRef = doc(db, 'jogos', route.params.jogo as string)
-const jogo = useDocument<Jogo>(jogoRef)
+const {jogo} = useJogo(route.params.jogo as string)
 const grupoId = computed(()=>jogo.value?.grupoId)
 const diaId = computed(()=>jogo.value?.diaId)
-const jogadores = useListaJogadores(grupoId)
-const presencas = useListaPresencasDiaGrupo(diaId, grupoId)
-const modalReferenciarVideo = ref(false)
+const {jogadores} = useListaJogadores(grupoId)
+const {presencas} = useListaPresencasDiaGrupo(diaId, grupoId)
 
-const scoreboardOpen = ref(false)
-const escalacoesOpen = ref(false)
+
 watch(jogo, value => {
   if (!value) return
   jogoStore.populate(value)
-}, {
-  immediate: true
-})
+}, { immediate: true })
 console.log(presencas)
-
+// SEO
+useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
+watchEffect(() => {
+  pageTitle.value = jogo.value?.nome ?? 'Carregando...'
+})
+const tabItems = [
+  {label: "Escalação", slot:'escalacao'},
+  {label: "Ao Vivo", slot:'live'},
+  {label: "Video", slot:'video'},
+  {label: "Estatísticas", slot:'stats'},
+]
 </script>
 
 <template>
-<UModal v-model:open="escalacoesOpen" fullscreen >
-    <UButton v-if="!jogo?.videoId" >Abrir escalacoes</UButton>
-    <template #content>
-        <CardTimes :presencas="presencas" :jogadores="jogadores" :escalacao="jogo?.escalacao"/>
+  <h1 class="text-sm bg-accented text-center p-1">{{ pageTitle }}</h1>
+  <UTabs :items="tabItems">
+    <template #escalacao>
+      <CardEscalacao :presencas="presencas" :jogadores="jogadores"
+       :escalacao="jogo?.escalacao"/>
     </template>
-</UModal>
-<UModal v-model:open="scoreboardOpen" fullscreen >
-    <UButton v-if="!jogo?.videoId" @click="initAudio">Abrir placar</UButton>
-    <template #content>
-        <Scoreboard @close="scoreboardOpen = false"/>
+    <template #live>
+      <Scoreboard/>
     </template>
-</UModal>
+    <template #video>
+      <div class="p-2">
+        <FormYoutubeVideo v-if="!jogo?.videoId" :jogoId="jogo!.id"/>
+        <iframe v-if="jogo?.videoId"
+          class="aspect-video w-full"
+          :src="`https://www.youtube.com/embed/${jogo.videoId}`"
+          allowfullscreen
+        />
+      </div>
+    </template>
+  </UTabs>
 
-<UModal title="Referenciar video" v-model:open="modalReferenciarVideo">
-    <UButton v-if="!jogo?.videoId">Anotar video...</UButton>
-    <template #body>
-        <FormYoutubeVideo @close="modalReferenciarVideo = false"/>
-    </template>
-</UModal>
-<iframe v-if="jogo?.videoId"
-  class="aspect-video w-full"
-  :src="`https://www.youtube.com/embed/${jogo.videoId}`"
-  allowfullscreen
-/>
+
+
+
 
 </template>
