@@ -11,7 +11,7 @@ const emit = defineEmits<{
 const orientation = useScreenOrientation()
 
 const isLandscape = computed(() => {
-  return orientation.orientation.value.includes('landscape')
+  return orientation.orientation.value?.includes('landscape')
 })
 </script>
 
@@ -27,7 +27,7 @@ const isLandscape = computed(() => {
 
     <!-- SCORE -->
     <section class="score-zone">
-      {{ jogoStore.jogo?.status }}
+      {{ jogoStore.jogo?.timer.status }}
     </section>
 
     <!-- ACTIONS LEFT -->
@@ -64,15 +64,10 @@ const isLandscape = computed(() => {
 <style scoped>
 .timer-layout {
   height: 100dvh;
-
   display: grid;
-
   gap: 1rem;
-
   padding: 1rem;
-
   background: black;
-
   color: white;
 }
 
@@ -85,12 +80,10 @@ const isLandscape = computed(() => {
     96px
     1fr
     96px;
-
   grid-template-rows:
     auto
     auto
     1fr;
-
   grid-template-areas:
     "header header header"
     "actionsA score actionsB"
@@ -103,13 +96,11 @@ const isLandscape = computed(() => {
 
 .timer-layout-portrait {
   grid-template-columns: 1fr;
-
   grid-template-rows:
     auto
     1fr
     1fr
     auto;
-
   grid-template-areas:
     "header"
     "clock"
@@ -123,53 +114,32 @@ const isLandscape = computed(() => {
 
 .header-zone {
   grid-area: header;
-
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
-
   min-height: 48px;
-
   padding-inline: 0.25rem;
 }
-
 .header-title {
   font-size: 0.875rem;
-
   opacity: 0.7;
-
   overflow: hidden;
-
   text-overflow: ellipsis;
-
   white-space: nowrap;
 }
 
 .close-btn {
   width: 40px;
-
   height: 40px;
-
   border-radius: 999px;
-
   border: none;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   font-size: 1.25rem;
-
   flex-shrink: 0;
-
   background: transparent;
-
   color: white;
-
   cursor: pointer;
 }
 
@@ -179,41 +149,27 @@ const isLandscape = computed(() => {
 
 .score-zone {
   grid-area: score;
-
   border: 1px solid #ef4444;
-
-  
-
   padding: 1rem;
 }
-
 .actions-a-zone {
   grid-area: actionsA;
-
   border: 1px solid #22c55e;
-
   border-radius: 24px;
-
   padding: 1rem;
 }
 
 .actions-b-zone {
   grid-area: actionsB;
-
   border: 1px solid #22c55e;
-
   border-radius: 24px;
-
   padding: 1rem;
 }
 
 .actions-zone {
   grid-area: actions;
-
   border: 1px solid #22c55e;
-
   border-radius: 24px;
-
   padding: 1rem;
 }
 
@@ -233,11 +189,8 @@ const isLandscape = computed(() => {
 .actions-zone,
 .clock-zone {
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
   min-height: 0;
 }
 </style>

@@ -35,7 +35,7 @@ function selecionarJogador(ev) {
 }
 function associarJogador() {
   //console.log('atribuir jogador', jogadorSelecionado.value?.nome , 'para usuario', user.value?.email, 'no grupo', grupo.value?.nome)
-  associarJogadorAUsuario(jogadorSelecionado.value, user.value?.uid).then(()=>{
+  associarJogadorAUsuario(jogadorSelecionado.value, user.value.uid).then(()=>{
     console.log('jogador associado, redirecionando...')
   }).catch(err=> {
     console.error.err
@@ -54,8 +54,8 @@ function associarJogador() {
     <UCard>
       <p class="text-gray-500">
         Ocorreu um erro ao validar o convite. Tente novamente mais tarde.
-        <pre>{{ error }}</pre>
       </p>
+        <pre>{{ error }}</pre>
     </UCard>
   </div>
   <div v-else-if="notFound">

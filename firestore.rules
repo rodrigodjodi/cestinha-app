@@ -1,5 +1,7 @@
 rules_version = '2';
-
+function isAnotador() {
+  return request.auth.uid == resource.data.anotadorId;
+}
 service cloud.firestore {
   match /databases/{database}/documents {
     match /convites/{convite} {
@@ -17,6 +19,7 @@ service cloud.firestore {
     }
     match /jogos/{jogo} {
       allow read: if request.auth != null;
+      allow update: if isAnotador();
     }
     match /presencas/{presenca} {
       allow read: if request.auth != null;

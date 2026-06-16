@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { VueDraggableNext, type DragEvent } from 'vue-draggable-next'
+type Colecao = 'A' | 'B' | 'banco'
 defineProps<{
   titulo: string
   color?: string
@@ -10,12 +11,12 @@ defineProps<{
   }[]
   selecionados: Set<string>
   banco: Set<string>
-  colecao: 'A' | 'B' | 'banco'
+  colecao: Colecao
 }>()
 
 defineEmits<{
   toggle: [id: string]
-  mover: [origem: 'A' | 'B' | 'banco', destino: 'A' | 'B' | 'banco']
+  mover: [origem: Colecao, destino: Colecao]
   add: [ev: DragEvent]
 }>()
 </script>

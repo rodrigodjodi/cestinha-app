@@ -1,32 +1,17 @@
 <script setup lang="ts">
 import { beep, multiBeep } from "@/utils/beep"
 const jogoStore = useJogoStore()
-const { status, iniciadoEm, pausadoEm, jogo } = storeToRefs(jogoStore)
+const { status, iniciadoEm, pausadoEm, finalizadoEm, duracao, tempoPausadoTotalMs, jogo } = storeToRefs(jogoStore)
 const emit = defineEmits<{
   close: []
 }>()
-/**
- * Config
- */
-const duracao = ref(600) // todo: substiruir por global do grupo
-
-/**
- * Estado
- */
-
-
-const tempoPausadoTotal = ref(0)
-
 const agora = ref<number | null>(null)
-
 let interval: ReturnType<typeof setInterval> | null = null
-
 /**
  * Tick visual
  */
 function iniciarTicker() {
   if (interval) return
-
   interval = setInterval(() => {
     agora.value = Date.now()
     console.log('tick', tempoRestante.value)
@@ -35,7 +20,6 @@ function iniciarTicker() {
 
 function pararTicker() {
   if (!interval) return
-
   clearInterval(interval)
   interval = null
 }
@@ -45,16 +29,23 @@ function pararTicker() {
  */
 const tempoDecorrido = computed(() => {
   if (!iniciadoEm.value) return 0
+  let referencia: number
+  switch (status.value) {
+    case 'pausado':
+      referencia = pausadoEm.value!
+      break
 
-  const referencia =
-    status.value === '2.pausado'
-      ? pausadoEm.value!
-      : (agora.value ?? Date.now())
+    case 'finalizado':
+      referencia = finalizadoEm.value!
+      break
+    default:
+      referencia = agora.value ?? Date.now()
+  }
 
   return Math.floor(
     (referencia -
       iniciadoEm.value -
-      tempoPausadoTotal.value) / 1000
+      tempoPausadoTotalMs.value!) / 1000
   )
 })
 
@@ -62,7 +53,7 @@ const tempoDecorrido = computed(() => {
  * Tempo restante
  */
 const tempoRestante = computed(() => {
-  return Math.max(duracao.value - tempoDecorrido.value,
+  return Math.max(duracao.value! - tempoDecorrido.value,
     0
   )
 })
@@ -110,11 +101,9 @@ async function pausar() {
 function retomar() {
   if (!pausadoEm.value) return
   const now = Date.now()
-  tempoPausadoTotal.value +=
-    now - pausadoEm.value
-  // agora.value = now
+  const tempoPausaAtual = now - pausadoEm.value
   
-  jogoStore.retomar()?.then(() => {
+  jogoStore.retomar(tempoPausaAtual)?.then(() => {
     iniciarTicker()
     beep({
     frequency: 980,
@@ -141,35 +130,28 @@ function finalizar() {
 async function reiniciar() {
   jogoStore.reiniciar()?.then(()=> {
     pararTicker()
-    tempoPausadoTotal.value = 0
     agora.value = null
   })
-
-  // agora.value = Date.now()
-
 }
 function novoJogo() {
   if (!jogo.value) return
-  useNovoJogo(jogo.value!.diaId, jogo.value!.grupoId).then(({ jogoId }) => {
+  useNovoJogo(jogo.value!.diaId, jogo.value!.grupoId, jogo.value!.anotadorId).then(({ jogoId }) => {
     console.log("novo jogo criado", jogoId)
     navigateTo(`/jogos/${jogoId}`)
   })
 }
 function handleTimerClick() {
   switch (status.value) {
-    case '0.ocioso':
+    case 'ocioso':
       iniciar()
-   
       break
-
-    case '1.rodando':
+    case 'rodando':
       pausar()
       break
-
-    case '2.pausado':
+    case 'pausado':
       retomar()
       break
-    case '3.finalizado':
+    case 'finalizado':
       // abrir modal novo jogo
       showNewGameModal.value = true
       break
@@ -187,27 +169,26 @@ const stopWatch = watch(
   }
 )
 onMounted(() => {
-  if (status.value === '1.rodando') {
+  if (status.value === 'rodando') {
     iniciarTicker()
   }
 })
 
 onBeforeUnmount(() => {
   console.log('unmount timer, parando ticker e watch')
-  jogoStore.limparStore()
   pararTicker()
   stopWatch()
 })
 const showNewGameModal = ref(false)
 const colorClass= computed(()=>{
   switch (status.value) {
-    case '0.ocioso':
+    case 'ocioso':
       return 'text-gray-500'
-    case '1.rodando':
+    case 'rodando':
       return 'text-green-500'
-    case '2.pausado':
+    case 'pausado':
       return 'text-yellow-500'
-    case '3.finalizado':
+    case 'finalizado':
       return 'text-red-500'
     default:
       return ''
@@ -220,13 +201,13 @@ const colorClass= computed(()=>{
 
     <!-- TIMER -->
     <button class="flex-1 flex items-center justify-center" @click="handleTimerClick">
-      <span class="text-[120px] font-bold tabular-nums" :class="colorClass">
+      <span class="text-[120px] font-bold tabular-nums cursor-pointer" :class="colorClass">
         {{ tempoFormatado }}
       </span>
     </button>
 
     <!-- ACTIONS -->
-    <div v-if="status === '2.pausado'" class="flex items-center justify-center gap-2 pb-3">
+    <div v-if="status === 'pausado'" class="flex items-center justify-center gap-2 pb-3">
       <button class="border rounded px-3 py-1" @click="reiniciar">
         Reiniciar
       </button>
@@ -240,7 +221,7 @@ const colorClass= computed(()=>{
         <div class="p-4">
           <h2 class="text-2xl font-bold mb-4">Jogo finalizado, o que deseja fazer?</h2>
           <div class="flex justify-between mt-8">
-            <UButton class="px-8 py-16" @click="showNewGameModal = false; emit('close')" size="xl" color="neutral">
+            <UButton class="px-8 py-16" @click="showNewGameModal = false" size="xl" color="neutral">
               Fechar placar
             </UButton>
             <UButton class="px-8 py-4" @click="novoJogo" size="xl">

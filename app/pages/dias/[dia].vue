@@ -17,8 +17,10 @@ const jogadorLogado = computed(() => jogadores.value.find(el => el.usuarioId ===
 const confirmados = computed(() => presencas.value.filter(presenca => presenca.situacao === '0.confirmado'))
 const emEspera = computed(() => presencas.value.filter(presenca => presenca.situacao === '1.espera'))
 const jogosDiaGrupo = useListaJogosDiasGrupo(diaId, grupoId)
+const anotadorModel = ref(true)
+const anotadorJogo = computed(()=>anotadorModel ? user.value!.uid : null)
 async function novoJogo() {
-  const {jogoId} = await useNovoJogo(diaId, grupoId)
+  const {jogoId} = await useNovoJogo(diaId, grupoId, anotadorJogo.value)
   await navigateTo(`/jogos/${jogoId}`)
 }
 
@@ -62,7 +64,10 @@ async function novoJogo() {
           {{ jogo.nome }}
         </nuxt-link>
       </div>
-      <UButton color="primary" @click="novoJogo">Adicionar jogo</UButton>
+      <div class="flex gap-3 items-center">
+        <UButton color="primary" @click="novoJogo">Adicionar jogo</UButton>
+        <UCheckbox v-model="anotadorModel" label="Assumir anotação" />
+      </div>
     </UCard>
   </div>
 

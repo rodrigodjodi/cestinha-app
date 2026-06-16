@@ -3,8 +3,10 @@
 </script>
 
 <template>
-    <UContainer>
-        <TheHeader />
-        <slot />
-    </UContainer>
+  <div>
+    <TheHeader />
+    <UMain>
+      <slot />
+    </UMain>
+  </div>
 </template>

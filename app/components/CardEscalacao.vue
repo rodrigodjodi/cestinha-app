@@ -1,58 +1,13 @@
 <script setup lang="ts">
-import { type Presenca } from '@/schemas/presenca.schema'
-import {type Jogador }  from '@/schemas/jogador.schema' 
-import {type Escalacao }  from '@/schemas/jogo.schema'
 import { deleteField } from 'firebase/firestore'
-import { useElementSize } from '@vueuse/core'
 import { VueDraggableNext, type DragEvent } from 'vue-draggable-next'
-const props = defineProps<{
-  presencas: Presenca[]
-  jogadores: Jogador[],
-  escalacao?: Escalacao
-}>()
-const jogadoresMap = computed(() => {
-  return new Map(
-    props.jogadores.map(j => [j.id, j])
-  )
-})
-type ItemJogadorEscalacao = {
-  id: string
-  nome: string
-  subtitulo?: string
-  fotoUrl?: string
-}
-// isso aqui basicamente é um join entre jogadores x presencas
-const itensPresencaLista = computed<ItemJogadorEscalacao[]>(() => {
-  return props.presencas.flatMap(presenca => {
-    const jogador = jogadoresMap.value.get(presenca.jogadorId)
-    if (!jogador) return []
-    return {
-      id: jogador.id,
-      nome: jogador.nome,
-      fotoUrl: jogador.fotoUrl || '',
-      subtitulo: ''
-    }
-  })
-})
-
-
-
-
-const timeA = computed(() => {
-  return itensPresencaLista.value
-  .filter(j => props.escalacao?.[j.id]?.time === 'A')
-})
-const timeB = computed(() => {
-  return itensPresencaLista.value
-  .filter(j => props.escalacao?.[j.id]?.time === 'B')
-})
-const banco = computed(() => {
-  return itensPresencaLista.value.filter(itemJogador => {
-    return !props.escalacao?.[itemJogador.id]
-  })
-})
-
+const user = useCurrentUser()
+const jogoStore = useJogoStore()
+const toast = useToast()
+const { timeA, timeB, banco, jogo } = storeToRefs(jogoStore)
 type Colecao = 'A' | 'B' | 'banco'
+
+                                 
 const selecionados = ref<Record<Colecao, Set<string>>>({
   A: new Set(),
   B: new Set(),
@@ -69,7 +24,16 @@ function toggleJogador(id: string, colecao: Colecao) {
   console.log('selecionados: ', selecionados.value)
 }
 type AtualizacaoEscalacao = Record<string, { time: 'A' | 'B', ordem?: number }>
+
 async function mover(origem:Colecao, destino: Colecao) {
+  console.log(" funcao mover chamada")
+  if (jogo.value?.anotadorId !== user.value?.uid) {
+    toast.add({
+      color: 'error',
+      title: "Você não pode executr essa essa função",
+    })
+    return false
+  }
   console.log('origem: ', origem)
   console.log('destino: ', destino)
   console.log('selecionados: ', selecionados)
@@ -92,11 +56,17 @@ async function mover(origem:Colecao, destino: Colecao) {
   // limpa apenas a origem
   selecionados.value[origem].clear()
 }
-const container = useTemplateRef('bancoRef')
-const { height } = useElementSize(container)
-const compact = computed(() => height.value < 140)
+
 async function handleDragChange(ev: DragEvent) {
   // console.log('added change: ', ev)
+  console.log(" funcao drag chamada")
+  if (jogo.value?.anotadorId !== user.value?.uid) {
+    toast.add({
+      color: 'error',
+      title: "Você não pode executr essa essa função",
+    })
+    return false
+  }
   const destino = ev.to.dataset.colecao
   console.log('colecao destino: ', destino)
   const jogadorId = ev.item.dataset.jogadorId
@@ -111,8 +81,7 @@ async function handleDragChange(ev: DragEvent) {
       time: destino
     }
   }
-
-  await useJogoStore().gravarEscalacao(updates)
+  await jogoStore.gravarEscalacao(updates)
 }
 </script>
 
@@ -123,21 +92,6 @@ async function handleDragChange(ev: DragEvent) {
     body: 'p-1 sm:p-1 flex flex-col flex-1 min-h-0'
   }"
 >
-    <!-- <template #header>
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold">
-          Escalações
-        </h2>
-
-        <UBadge
-          color="neutral"
-          variant="soft"
-        >
-          {{ selecionados.size }} selecionados
-        </UBadge>
-      </div>
-    </template> -->
-
     <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
       <!-- TIME A -->
       <ListaEscalacao colecao="A"
@@ -207,16 +161,15 @@ async function handleDragChange(ev: DragEvent) {
           {{ banco.length }}
         </UBadge>
       </div>
-      <!-- eu preciso de que ssa div estique até preencher a tela -->
-      <!-- daí sim eu consigo ler a sual altura -->
-      <div ref="bancoRef" class="flex-1 min-h-0">
+      
+      <div class="flex-1 min-h-0">
         <vue-draggable-next
           :model-value="banco"
           group="jogadores"
           tag="div"
           :sort="false" 
-          class="flex gap-2 basis-30"
-          :class="[compact ? 'overflow-x-auto' : 'flex-wrap']"
+          class="flex gap-2 basis-30 flex-wrap overflow-y-auto"
+          
           @add="handleDragChange"
           item-key="id"
           data-colecao="banco"
