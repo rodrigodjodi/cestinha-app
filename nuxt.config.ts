@@ -13,19 +13,19 @@ export default defineNuxtConfig({
   },
   vuefire: {
     config: {
-      apiKey: process.env.NUXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NUXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NUXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NUXT_PUBLIC_FIREBASE_APP_ID
+      apiKey: 'AIzaSyAwqnYw_adNUkZZrDeSSaaZGIRJ1WtA8Zw',
+      authDomain: 'cestinha-app-br.firebaseapp.com',
+      projectId: 'cestinha-app-br',
+      storageBucket: 'cestinha-app-br.firebasestorage.app',
+      messagingSenderId: '993542374055',
+      appId: '1:993542374055:web:e2d0e09677dbc5505f1182'
     },
     auth: {
       enabled: true
     },
   },
   runtimeConfig: {
-    firebase: {
+    public: {
       projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
       clientEmail: process.env.NUXT_PUBLIC_FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.NUXT_PUBLIC_FIREBASE_PRIVATE_KEY
