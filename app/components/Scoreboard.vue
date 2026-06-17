@@ -1,15 +1,7 @@
 <script setup lang="ts">
-import { type Jogo } from '~/schemas/jogo.schema';
 import { useScreenOrientation } from '@vueuse/core'
-
 const jogoStore = useJogoStore()
-
-const emit = defineEmits<{
-  close: []
-}>()
-
 const orientation = useScreenOrientation()
-
 const isLandscape = computed(() => {
   return orientation.orientation.value?.includes('landscape')
 })
@@ -18,16 +10,11 @@ const isLandscape = computed(() => {
 <template>
   <div
     class="timer-layout"
-    :class="
-      isLandscape
-        ? 'timer-layout-landscape'
-        : 'timer-layout-portrait'
-    "
+    :class="isLandscape ? 'timer-layout-landscape' : 'timer-layout-portrait'"
   >
-
     <!-- SCORE -->
     <section class="score-zone">
-      {{ jogoStore.jogo?.timer.status }}
+      PLACAR
     </section>
 
     <!-- ACTIONS LEFT -->
@@ -56,17 +43,17 @@ const isLandscape = computed(() => {
 
     <!-- CLOCK -->
     <section class="clock-zone">
-      <Timer @close="emit('close')"/>
+      <Timer />
     </section>
   </div>
 </template>
 
 <style scoped>
 .timer-layout {
-  height: 100dvh;
+  height: 100%;
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.5rem;
+  padding: 0.5rem;
   background: black;
   color: white;
 }
@@ -109,41 +96,6 @@ const isLandscape = computed(() => {
 }
 
 /* =========================
-   HEADER
-========================= */
-
-.header-zone {
-  grid-area: header;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 48px;
-  padding-inline: 0.25rem;
-}
-.header-title {
-  font-size: 0.875rem;
-  opacity: 0.7;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.close-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-  background: transparent;
-  color: white;
-  cursor: pointer;
-}
-
-/* =========================
    ZONES
 ========================= */
 
@@ -176,7 +128,7 @@ const isLandscape = computed(() => {
 .clock-zone {
   grid-area: clock;
   border: 1px solid #3b82f6;
-  padding: 1rem;
+  padding: 0.5rem;
 }
 
 /* =========================

@@ -11,14 +11,7 @@ const { jogadores } = useListaJogadores(grupoId)
 const { presencas } = useListaPresencasDiaGrupo(diaId, grupoId)
 const user = useCurrentUser()
 
-watch(jogo, novoJogo => {
-  jogoStore.setJogo(novoJogo)
-  // cadastra usuario atual como anotador
-  /* if(novoJogo?.anotadorId === null){
-    console.log('[jogo.vue] Não tem anotador, atrbuindo usuário ', user.value?.uid)
-    jogoStore.atribuirAnotacao(user.value?.uid)
-  } */
-}, { immediate: true })
+watch(jogo, novoJogo => { jogoStore.setJogo(novoJogo)}, { immediate: true })
 watch(jogadores, value => { jogoStore.setJogadores(value) }, { immediate: true })
 watch(presencas, value => { jogoStore.setPresencas(value) }, { immediate: true })
 
@@ -29,30 +22,32 @@ watchEffect(() => {
 })
 const tabItems = [
   { label: "Escalação", slot: 'escalacao' },
-  { label: "Ao Vivo", slot: 'live' },
+  { label: "Ao Vivo", slot: 'live',  },
   { label: "Video", slot: 'video' },
   { label: "Estatísticas", slot: 'stats' },
 ]
-onBeforeUnmount(() => {
-  console.log('unmount timer, parando ticker e watch')
-  jogoStore.limparStore()
-})
+onBeforeUnmount(() => { jogoStore.limparStore()})
 </script>
 
 <template>
 
-  <UTabs :items="tabItems">
+  <UTabs :items="tabItems" class="flex-1 min-h-0" >
     <template #escalacao>
       <CardEscalacao />
     </template>
     <template #live>
-      <Scoreboard />
+      <div class="h-[calc(100vh-var(--ui-header-height)-40px)] relative">
+        <Scoreboard />
+      </div>
     </template>
     <template #video>
       <div class="p-2">
         <FormYoutubeVideo v-if="!jogo?.videoId" :jogoId="jogo!.id" />
         <AnotacaoVideo v-else />
       </div>
+    </template>
+    <template #stats>
+      <div class="bg-green-300 min-h-[calc(100vh-var(--ui-header-height)-40px)] relative"></div>
     </template>
   </UTabs>
 </template>

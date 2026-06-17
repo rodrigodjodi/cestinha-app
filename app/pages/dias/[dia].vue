@@ -32,7 +32,7 @@ const jogadorLogado = computed(() => {
 </script>
 <template>
   <BotaoConfirmacao v-if="dia?.status === '0.inscrevendo'"  :diaId="diaId"
-    :grupoId="grupoId" :presencas="presencas" />
+    :grupoId="grupoId" :presencas="presencas" :jogadorLogado="jogadorLogado"/>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
     <!-- CARD PRESENCAS -->
     <CardPresencas :jogadores="jogadores" :presencas="presencas" :jogadorLogado="jogadorLogado"

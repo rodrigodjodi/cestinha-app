@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { beep, multiBeep } from "@/utils/beep"
+import { useWakeLock } from '@vueuse/core'
+const {request, release} = useWakeLock()
 const jogoStore = useJogoStore()
 const { status, iniciadoEm, pausadoEm, finalizadoEm, duracao, tempoPausadoTotalMs, jogo } = storeToRefs(jogoStore)
 const emit = defineEmits<{
@@ -75,11 +77,12 @@ const tempoFormatado = computed(() => {
  */
 async function iniciar() {
   await jogoStore.iniciar()
+  request("screen")
   iniciarTicker()
   beep({
     frequency: 980,
     duration: 300,
-    type: 'sine'
+    type: 'sine', volume:1
   })
 }
 
@@ -91,7 +94,7 @@ async function pausar() {
   beep({
     frequency: 980,
     duration: 150,
-    type: 'sine'
+    type: 'sine', volume:1
   })
 }
 
@@ -108,18 +111,19 @@ function retomar() {
     beep({
     frequency: 980,
     duration: 150,
-    type: 'sine'
+    type: 'sine', volume:1
   })
   })
 }
 
 function finalizar() {
   jogoStore.finalizar()?.then(() => {
+    release()
     pararTicker()
     multiBeep({
       frequency: 1200,
       duration: 100,
-      volume: 0.5,
+      volume: 1,
       type: 'sawtooth',
       count: 20,
       interval: 120
@@ -200,8 +204,8 @@ const colorClass= computed(()=>{
   <div class="h-full w-full flex flex-col">
 
     <!-- TIMER -->
-    <button class="flex-1 flex items-center justify-center" @click="handleTimerClick">
-      <span class="text-[120px] font-bold tabular-nums cursor-pointer" :class="colorClass">
+    <button class="flex-1 flex items-start justify-center" @click="handleTimerClick">
+      <span class="text-[100px] font-bold cursor-pointer leading-20" :class="colorClass">
         {{ tempoFormatado }}
       </span>
     </button>
