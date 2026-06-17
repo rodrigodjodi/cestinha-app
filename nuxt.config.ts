@@ -25,10 +25,10 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    public: {
-      projectId: process.env.NUXT_PUBLIC_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.NUXT_PUBLIC_FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.NUXT_PUBLIC_FIREBASE_PRIVATE_KEY
+    firebase: {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY
     }
   },
   imports: {
