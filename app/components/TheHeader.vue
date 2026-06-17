@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-const pageTitle = useState('pageTitle')
+const pageTitle = useState<string>('pageTitle')
 const user = useCurrentUser()
 const { sair } = useFirebaseUser()
 
@@ -11,7 +11,8 @@ const userMenuItems: DropdownMenuItem[] = [
 </script>
 
 <template>
-  <UHeader :title="pageTitle">
+  <UHeader :title="pageTitle" to="/painel" :toggle="false"
+  :ui="{container:'max-w-full'}">
     <template #right>
       <UDropdownMenu :items="userMenuItems">
         <UButton color="neutral" variant="ghost">

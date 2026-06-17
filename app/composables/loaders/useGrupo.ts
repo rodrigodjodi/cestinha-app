@@ -1,8 +1,12 @@
 import { doc } from "firebase/firestore";
 import { grupoConverter } from "~/firebase/grupoConverter";
-export function useGrupo(grupoId: string) {
+export function useGrupo(grupoId: MaybeRefOrGetter<string|undefined>) {
   const db = useFirestore();
-  const docRefGrupo = doc(db, "grupos", grupoId).withConverter(grupoConverter);
+   const docRefGrupo = computed(() => {
+    const id = toValue(grupoId);
+    if (!id) { return null }
+    return doc(db, "grupos", id).withConverter(grupoConverter);
+  });
   const { data, pending, error } = useDocument(docRefGrupo);
   
   const grupo = computed(() => {

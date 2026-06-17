@@ -5,7 +5,8 @@ definePageMeta({middleware: ['auth']})
 // composables
 const pageTitle = useState('pageTitle')
 // stores
-useHead({ title: 'Painel do usuário' }) // esse título para a aba do navegador: Meus Grupos - Cestinha
+useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
+  pageTitle.value ='Painel'
 // estado
 const { grupos, pending, errosParseGrupo } = useGruposUsuario()
 

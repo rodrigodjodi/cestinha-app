@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { apiFetch } from "~/services/apiFetch";
 import type { Jogador } from "~/schemas/jogador.schema";
+import type { Presenca } from "~/schemas/presenca.schema";
 const props = defineProps<{
-  diaId: MaybeRefOrGetter<string | undefined>
+  diaId: MaybeRefOrGetter<string>
   grupoId: MaybeRefOrGetter<string | undefined>
   jogadorLogado: MaybeRefOrGetter<Jogador | undefined>
   presencas: MaybeRefOrGetter<Presenca[] | undefined>
 }>()
 const confirmado = computed(() => {
   // jogador está na lista de presenças?
-  return toValue(props.presencas).some(presenca => {
+  return toValue(props.presencas)?.some(presenca => {
     return presenca.jogadorId === toValue(props.jogadorLogado)?.id
   })
 })

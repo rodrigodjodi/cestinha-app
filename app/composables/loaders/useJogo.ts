@@ -1,8 +1,12 @@
 import { doc } from "firebase/firestore";
 import { jogoConverter } from "@/firebase/jogoConverter";
-export function useJogo(jogoId: string) {
+export function useJogo(jogoId: MaybeRefOrGetter<string|undefined>) {
   const db = useFirestore();
-  const docRefJogo = doc(db, "jogos", jogoId).withConverter(jogoConverter);
+  const docRefJogo = computed(() => {
+      const id = toValue(jogoId);
+      if (!id) { return null }
+      return doc(db, "jogos", id).withConverter(jogoConverter);
+    });
   const { data, pending, error } = useDocument(docRefJogo);
   
   const jogo = computed(() => {

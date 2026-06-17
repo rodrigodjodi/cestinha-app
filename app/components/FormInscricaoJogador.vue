@@ -66,11 +66,12 @@ function handleFormError(e: FormErrorEvent) {
 
 <template>
   <UForm @submit="inscreverJogador" :schema="formPresencaSchema" :state="inscricaoFormState" @error="handleFormError">
-    <UFormField label="Inscrever jogador manualmente" name="nome" :error="serverErrors.nome" help="Comece a preencher e use a lista para selecionar o jogador.">
+    <UFormField name="nome" :error="serverErrors.nome" class="w-full">
       <UInputMenu v-model="inscricaoFormState.nome" ref="nome-input" autocomplete :items="listaNomes"
-        :trailing-icon="false" :content="{ hideWhenEmpty: true }" placeholder="Nome jogador..."
+        :trailing-icon="false" :content="{ hideWhenEmpty: true }" placeholder="Inscrever jogador..."
        />
+       <UButton type="submit" icon="i-lucide-check" size="sm"
+       class="ml-3"/>
     </UFormField>
-    <button type="submit" class="hidden" />
   </UForm>
 </template>
