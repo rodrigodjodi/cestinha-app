@@ -28,17 +28,46 @@ const { jogadores } = useListaJogadores(grupoId)
 const jogadorLogado = computed(() => {
   return jogadores.value.find(el => el.usuarioId === user.value?.uid)
 })
+const tabItems = [
+  { label: 'Presenças', slot: 'presencas' },
+  { label: 'Escalação', slot: 'escalacao' },
+  { label: 'Jogos', slot: 'jogos' },
+  { label: 'Estatísticas', slot: 'estatisticas' },
+]
 
 </script>
 <template>
-  <BotaoConfirmacao v-if="dia?.status === '0.inscrevendo'"  :diaId="diaId"
-    :grupoId="grupoId" :presencas="presencas" :jogadorLogado="jogadorLogado"/>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-    <!-- CARD PRESENCAS -->
-    <CardPresencas :jogadores="jogadores" :presencas="presencas" :jogadorLogado="jogadorLogado"
-    :diaId="diaId" :grupoId="grupoId"/>
-    <!-- CARD JOGOS  -->
-    <CardJogos :diaId="diaId" :grupoId="grupoId" />
-  </div>
+  
 
+  <UTabs :items="tabItems" class="mt-4 flex-1 min-h-0">
+    <template #presencas>
+      <BotaoConfirmacao v-if="dia?.status === '0.inscrevendo'"  :diaId="diaId"
+    :grupoId="grupoId" :presencas="presencas" :jogadorLogado="jogadorLogado"/>
+      <CardPresencas
+        :jogadores="jogadores"
+        :presencas="presencas"
+        :jogadorLogado="jogadorLogado"
+        :diaId="diaId"
+        :grupoId="grupoId"
+      />
+    </template>
+
+    <template #escalacao>
+      <CardTimesDia
+        v-if="dia"
+        :dia="dia"
+        :diaId="diaId"
+        :jogadores="jogadores"
+        :presencas="presencas"
+      />
+    </template>
+
+    <template #jogos>
+      <CardJogos :diaId="diaId" :grupoId="grupoId" />
+    </template>
+
+    <template #estatisticas>
+      <div />
+    </template>
+  </UTabs>
 </template>
