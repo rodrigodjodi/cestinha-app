@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 import { z } from "zod";
+import { ladoEquipeSchema } from './equipe.schema'
 
 export const tipoJogadaSchema = z.enum([
   'FTM',
@@ -18,7 +19,7 @@ export const baseJogadaSchema = z.object({
   jogadorId: z.string().min(1),
   tipo: tipoJogadaSchema,
   tempoMs: z.number().int().nonnegative().nullable().default(null),
-  time: z.enum(['A', 'B']),
+  equipe: ladoEquipeSchema,
   assistenciaId: z.string().min(1).optional()
 });
 

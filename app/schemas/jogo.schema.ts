@@ -1,12 +1,7 @@
-import { z } from "zod";
-import { Timestamp } from "firebase/firestore";
-export const escalacaoSchema = z.record(
-  z.string().min(1),
-  z.object({
-    time: z.enum(['A', 'B']),
-    ordem: z.number().int().optional()
-  })
-).nullable().default({});
+import { Timestamp } from 'firebase/firestore'
+import { z } from 'zod'
+import { equipeJogoSchema, listaJogadoresSchema } from './equipe.schema'
+
 export const jogoStatusSchema = z.enum([
   'ocioso',
   'rodando',
@@ -26,11 +21,49 @@ export const baseJogoSchema = z.object({
   diaId: z.string().min(1),
   videoId: z.string().min(1).nullable().default(null),
   videoOffset: z.number().optional().default(0),
-  escalacao: escalacaoSchema,
   anotadorId: z.string().min(1).nullable().default(null),
-  timer: timerSchema
+  timer: timerSchema,
+  equipes: z.object({
+    esquerda: equipeJogoSchema,
+    direita: equipeJogoSchema,
+  }),
+  banco: listaJogadoresSchema,
+  placar: z.object({
+    esquerda: z.number().int().nonnegative(),
+    direita: z.number().int().nonnegative(),
+  }),
+}).superRefine((jogo, ctx) => {
+  const posicaoPorJogador = new Map<string, string>()
+  const posicoes = [
+    ['equipes', 'esquerda', jogo.equipes.esquerda.jogadores],
+    ['equipes', 'direita', jogo.equipes.direita.jogadores],
+    ['banco', null, jogo.banco],
+  ] as const
+
+  posicoes.forEach(([grupo, lado, jogadores]) => {
+    const posicao = lado ?? grupo
+    const jogadoresUnicos = new Set(jogadores)
+
+    jogadoresUnicos.forEach((jogadorId) => {
+      const posicaoAnterior = posicaoPorJogador.get(jogadorId)
+
+      if (posicaoAnterior && posicaoAnterior !== posicao) {
+        const index = jogadores.indexOf(jogadorId)
+
+        ctx.addIssue({
+          code: 'custom',
+          message: `O jogador já pertence a ${posicaoAnterior}`,
+          path: lado
+            ? [grupo, lado, 'jogadores', index]
+            : [grupo, index],
+        })
+      } else {
+        posicaoPorJogador.set(jogadorId, posicao)
+      }
+    })
+  })
 });
-export const jogoSchema = baseJogoSchema.extend({
+export const jogoSchema = baseJogoSchema.safeExtend({
   criadoPor: z.string().min(1),
   nome: z.string().min(1),
   id: z.string().min(1),
@@ -38,5 +71,4 @@ export const jogoSchema = baseJogoSchema.extend({
 
 export type BaseJogo = z.input<typeof baseJogoSchema>
 export type Jogo = z.output<typeof jogoSchema>
-export type Escalacao = z.output<typeof escalacaoSchema>
 export type JogoStatus = z.infer<typeof jogoStatusSchema>
