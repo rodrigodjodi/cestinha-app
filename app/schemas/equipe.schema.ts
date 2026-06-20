@@ -33,7 +33,6 @@ export const timeDiaSchema = z.object({
 })
 
 export const equipeJogoSchema = z.object({
-  origemTimeDia: timeDiaIdSchema.nullable(),
   nome: z.string().min(1),
   jogadores: listaJogadoresSchema,
 })

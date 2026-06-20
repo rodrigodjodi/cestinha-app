@@ -14,7 +14,9 @@ const {
 )
 // console.log(jogos)
 const anotadorModel = ref(true)
-const anotadorJogo = computed(() => anotadorModel ? user.value!.uid : null)
+const anotadorJogo = computed(() =>
+  anotadorModel.value ? user.value?.uid ?? null : null
+)
 async function novoJogo() {
   const { jogoId } = await useNovoJogo(props.diaId, props.grupoId, anotadorJogo.value)
   await navigateTo(`/jogos/${jogoId}`)

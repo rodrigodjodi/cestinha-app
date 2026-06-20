@@ -1,29 +1,26 @@
-import { apiFetch } from "~/services/apiFetch";
-import { type BaseJogo } from "@/schemas/jogo.schema";
+import { apiFetch } from '~/services/apiFetch'
+import type { CriarJogo } from '@/schemas/jogo.schema'
+
 export default async function useNovoJogo(
-  diaId: MaybeRefOrGetter<string|undefined>,
-  grupoId: MaybeRefOrGetter<string|undefined>,
-  anotadorId: string|null
+  diaId: MaybeRefOrGetter<string | undefined>,
+  grupoId: MaybeRefOrGetter<string | undefined>,
+  anotadorId: string | null
 ) {
-  if(!toValue(grupoId) || !toValue(diaId)) {} // todo: throw, precisa desses elementos, aqui não é reativo
-  const payload: BaseJogo = {
-    diaId: toValue(diaId)!,
-    grupoId: toValue(grupoId)!,
-    videoId: null,
-    timer: {
-      status: "ocioso",
-      iniciadoEm: null,
-      pausadoEm: null,
-      finalizadoEm: null,
-      duracao: 615,
-      tempoPausadoTotalMs: 0
-    },
-    escalacao: null,
-    anotadorId: anotadorId
-  };
-  console.log("[useNovoJogo]payload ", payload);
-  return apiFetch<{ jogoId: string }>("/api/jogos/criar", {
-    method: "POST",
+  const diaIdValue = toValue(diaId)
+  const grupoIdValue = toValue(grupoId)
+
+  if (!grupoIdValue || !diaIdValue) {
+    throw new Error('Dia e grupo são obrigatórios para criar um jogo')
+  }
+
+  const payload: CriarJogo = {
+    diaId: diaIdValue,
+    grupoId: grupoIdValue,
+    anotadorId,
+  }
+
+  return apiFetch<{ jogoId: string }>('/api/jogos/criar', {
+    method: 'POST',
     body: payload,
-  });
+  })
 }

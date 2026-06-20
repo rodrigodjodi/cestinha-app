@@ -1,207 +1,262 @@
 <script setup lang="ts">
-import { deleteField } from 'firebase/firestore'
-import { VueDraggableNext, type DragEvent } from 'vue-draggable-next'
+import { VueDraggableNext } from 'vue-draggable-next'
+import type { Dia } from '~/schemas/dia.schema'
+import type { Jogo } from '~/schemas/jogo.schema'
+import type { Jogador } from '~/schemas/jogador.schema'
+import type { TimeDiaId } from '~/schemas/equipe.schema'
+
+const props = defineProps<{
+  jogo: Jogo
+  dia: Dia
+  jogadores: Jogador[]
+}>()
+
 const user = useCurrentUser()
-const jogoStore = useJogoStore()
 const toast = useToast()
-const { timeA, timeB, banco, jogo } = storeToRefs(jogoStore)
-type Colecao = 'A' | 'B' | 'banco'
-
-                                 
-const selecionados = ref<Record<Colecao, Set<string>>>({
-  A: new Set(),
-  B: new Set(),
-  banco: new Set()
+const jogoStore = useJogoStore()
+const listasEquipes = reactive<Record<'esquerda' | 'direita', Jogador[]>>({
+  esquerda: [],
+  direita: [],
 })
+const bandejas = reactive<Record<TimeDiaId, Jogador[]>>({
+  time1: [],
+  time2: [],
+  time3: [],
+})
+const assinaturasPendentes = new Set<string>()
+let inicializado = false
+let temporizador: ReturnType<typeof setTimeout> | undefined
+let filaSalvamento = Promise.resolve()
 
-function toggleJogador(id: string, colecao: Colecao) {
-  const set = selecionados.value[colecao]
-  if (set.has(id)) {
-    set.delete(id)
-  } else {
-    set.add(id)
-  }
-  console.log('selecionados: ', selecionados.value)
-}
-type AtualizacaoEscalacao = Record<string, { time: 'A' | 'B', ordem?: number }>
-
-async function mover(origem:Colecao, destino: Colecao) {
-  console.log(" funcao mover chamada")
-  if (jogo.value?.anotadorId !== user.value?.uid) {
-    toast.add({
-      color: 'error',
-      title: "Você não pode executr essa essa função",
-    })
-    return false
-  }
-  console.log('origem: ', origem)
-  console.log('destino: ', destino)
-  console.log('selecionados: ', selecionados)
-  const ids = selecionados.value[origem]
-  if (!ids.size) return
-  const updates: AtualizacaoEscalacao = {}
-  for (const id of ids) {
-    // indo para banco = remove da escalacao
-    if (destino === 'banco') {
-      updates[`escalacao.${id}`] = deleteField()
-    } else { // indo para time
-      updates[`escalacao.${id}`] = {
-        time: destino
-      }
-    }
-  }
-  console.log('updates', updates)
-  await useJogoStore().gravarEscalacao(updates)
-
-  // limpa apenas a origem
-  selecionados.value[origem].clear()
+const podeEditar = computed(() => props.jogo.anotadorId === user.value?.uid)
+const jogadoresMap = computed(() => new Map(
+  props.jogadores.map(jogador => [jogador.id, jogador])
+))
+const timesVisuais = computed<{ id: TimeDiaId, titulo: string }[]>(() => [
+  { id: 'time1', titulo: props.dia.times.time1.nome || 'Time 1' },
+  { id: 'time2', titulo: props.dia.times.time2.nome || 'Time 2' },
+  { id: 'time3', titulo: props.dia.times.time3.nome || 'Time 3' },
+])
+const grupoDrag = {
+  name: 'composicao-jogo',
+  pull: true,
+  put: true,
 }
 
-async function handleDragChange(ev: DragEvent) {
-  // console.log('added change: ', ev)
-  console.log(" funcao drag chamada")
-  if (jogo.value?.anotadorId !== user.value?.uid) {
-    toast.add({
-      color: 'error',
-      title: "Você não pode executr essa essa função",
-    })
-    return false
-  }
-  const destino = ev.to.dataset.colecao
-  console.log('colecao destino: ', destino)
-  const jogadorId = ev.item.dataset.jogadorId
-  console.log('id jogador: ', jogadorId)
-  if (!destino || !jogadorId) return
-   const updates: AtualizacaoEscalacao = {}
+function resolverJogadores(ids: string[]) {
+  return ids.flatMap(id => {
+    const jogador = jogadoresMap.value.get(id)
+    return jogador ? [jogador] : []
+  })
+}
 
-  if (destino === 'banco') {
-    updates[`escalacao.${jogadorId}`] = deleteField()
-  } else {
-    updates[`escalacao.${jogadorId}`] = {
-      time: destino
-    }
+function assinaturaComposicao(composicao: {
+  equipes: Jogo['equipes']
+  banco: string[]
+}) {
+  return JSON.stringify(composicao)
+}
+
+function composicaoLocal() {
+  return {
+    equipes: {
+      esquerda: {
+        nome: props.jogo.equipes.esquerda.nome,
+        jogadores: listasEquipes.esquerda.map(jogador => jogador.id),
+      },
+      direita: {
+        nome: props.jogo.equipes.direita.nome,
+        jogadores: listasEquipes.direita.map(jogador => jogador.id),
+      },
+    },
+    banco: [
+      ...bandejas.time1,
+      ...bandejas.time2,
+      ...bandejas.time3,
+    ].map(jogador => jogador.id),
   }
-  await jogoStore.gravarEscalacao(updates)
+}
+
+function sincronizarDoJogo() {
+  listasEquipes.esquerda = resolverJogadores(props.jogo.equipes.esquerda.jogadores)
+  listasEquipes.direita = resolverJogadores(props.jogo.equipes.direita.jogadores)
+
+  const bancoIds = new Set(props.jogo.banco)
+  bandejas.time1 = resolverJogadores(
+    props.dia.times.time1.jogadores.filter(id => bancoIds.has(id))
+  )
+  bandejas.time2 = resolverJogadores(
+    props.dia.times.time2.jogadores.filter(id => bancoIds.has(id))
+  )
+  bandejas.time3 = resolverJogadores(
+    props.dia.times.time3.jogadores.filter(id => bancoIds.has(id))
+  )
+  inicializado = true
+}
+
+watch(
+  () => [
+    props.jogo.equipes,
+    props.jogo.banco,
+    props.dia.times,
+    props.jogadores,
+  ],
+  () => {
+    const assinaturaRemota = assinaturaComposicao({
+      equipes: props.jogo.equipes,
+      banco: props.jogo.banco,
+    })
+
+    if (assinaturasPendentes.has(assinaturaRemota)) {
+      assinaturasPendentes.delete(assinaturaRemota)
+      return
+    }
+    if (assinaturasPendentes.size) {
+      return
+    }
+    sincronizarDoJogo()
+  },
+  { immediate: true, deep: true }
+)
+
+function agendarPersistencia() {
+  if (!inicializado || !podeEditar.value) {
+    return
+  }
+
+  clearTimeout(temporizador)
+  temporizador = setTimeout(() => {
+    const composicao = composicaoLocal()
+    const assinatura = assinaturaComposicao(composicao)
+    assinaturasPendentes.add(assinatura)
+
+    filaSalvamento = filaSalvamento
+      .catch(() => undefined)
+      .then(() => jogoStore.gravarComposicao(composicao))
+      .catch((error) => {
+        assinaturasPendentes.delete(assinatura)
+        toast.add({
+          title: 'Não foi possível salvar a escalação',
+          color: 'error',
+        })
+        console.error(error)
+      })
+  }, 250)
+}
+
+function moverBandeja(timeId: TimeDiaId, lado: 'esquerda' | 'direita') {
+  if (!podeEditar.value || !bandejas[timeId].length) {
+    return
+  }
+
+  listasEquipes[lado].push(...bandejas[timeId])
+  bandejas[timeId] = []
+  agendarPersistencia()
 }
 </script>
 
 <template>
-  <UCard
-  class="overflow-hidden h-full flex flex-col"
-  :ui="{
-    body: 'p-1 sm:p-1 flex flex-col flex-1 min-h-0'
-  }"
->
-    <div class="grid grid-cols-[1fr_auto_1fr] gap-3 items-stretch">
-      <!-- TIME A -->
-      <ListaEscalacao colecao="A"
-        titulo="Time A"
-        color="primary"
-        :jogadores="timeA"
-        :selecionados="selecionados.A"
-        :banco="selecionados.banco"
-        @toggle="(id)=>toggleJogador(id, 'A')"
-        @mover="mover"
-        @add="handleDragChange"
-      />
+  <UCard :ui="{ body: 'space-y-5 p-2 sm:p-4' }">
+    <div class="grid grid-cols-2 gap-3">
+      <UCard
+        v-for="equipe in [
+          { lado: 'esquerda' as const, titulo: jogo.equipes.esquerda.nome },
+          { lado: 'direita' as const, titulo: jogo.equipes.direita.nome },
+        ]"
+        :key="equipe.lado"
+        :ui="{ header: 'p-3', body: 'p-3' }"
+      >
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">{{ equipe.titulo }}</h3>
+            <UBadge color="neutral" variant="soft">
+              {{ listasEquipes[equipe.lado].length }}
+            </UBadge>
+          </div>
+        </template>
 
-      <!-- AÇÕES -->
-      <div class="flex items-center justify-center">
-        <div class="flex flex-col gap-4">
-          <UButton class="size-8  sm:size-10 py-8 justify-center"
-            icon="i-lucide-arrow-right"
-            square
-            :disabled="!selecionados.A.size"
-            @click=""
-          />
-          
-          <UButton class="size-8  sm:size-10 py-8 justify-center"
-            icon="i-lucide-arrow-left-right"
-            square
-            color="neutral"
-            :disabled="false"
-            @click=""
-          />
-
-          <UButton class="size-8  sm:size-10 py-8 justify-center"
-            icon="i-lucide-arrow-left"
-            square
-            color="neutral"
-            :disabled="!selecionados.B.size"
-            @click=""
-          />
-        </div>
-      </div>
-
-      <!-- TIME B -->
-      <ListaEscalacao
-        colecao="B"
-        titulo="Time B"
-        color="error"
-        :jogadores="timeB"
-        :selecionados="selecionados.B"
-        :banco="selecionados.banco"
-        @toggle="(id)=>toggleJogador(id, 'B')"
-        @mover="mover"
-        @add="handleDragChange"
-      />
-    </div>
-
-    <!-- PRESENÇAS:  -->
-    <div class="mt-2 flex flex-col flex-1 min-h-0">
-      <div class="mb-3 flex items-center justify-between">
-        <h3 class="font-medium">
-          Presenças
-        </h3>
-
-        <UBadge
-          color="neutral"
-          variant="subtle"
-        >
-          {{ banco.length }}
-        </UBadge>
-      </div>
-      
-      <div class="flex-1 min-h-0">
-        <vue-draggable-next
-          :model-value="banco"
-          group="jogadores"
-          tag="div"
-          :sort="false" 
-          class="flex gap-2 basis-30 flex-wrap overflow-y-auto"
-          
-          @add="handleDragChange"
+        <VueDraggableNext
+          v-model="listasEquipes[equipe.lado]"
+          :group="grupoDrag"
+          :disabled="!podeEditar"
           item-key="id"
-          data-colecao="banco"
+          class="flex min-h-40 flex-col gap-2"
+          @change="agendarPersistencia"
         >
           <ItemJogadorSelecao
-            v-for="jogador in banco"
+            v-for="jogador in listasEquipes[equipe.lado]"
             :key="jogador.id"
             :jogador="jogador"
-            :selected="selecionados.banco.has(jogador.id)"
-            @toggle="toggleJogador(jogador.id, 'banco')"
-            :data-jogador-id="jogador.id"
           />
-        </vue-draggable-next>
-      </div>
+        </VueDraggableNext>
+      </UCard>
     </div>
+
+    <section>
+      <div class="mb-3 flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Banco</h3>
+        <UBadge color="neutral" variant="soft">
+          {{ bandejas.time1.length + bandejas.time2.length + bandejas.time3.length }}
+        </UBadge>
+      </div>
+
+      <div class="overflow-x-auto pb-2">
+        <div class="grid min-w-[48rem] grid-cols-3 gap-3">
+          <UCard
+            v-for="time in timesVisuais"
+            :key="time.id"
+            :ui="{ header: 'p-2', body: 'p-3' }"
+          >
+            <template #header>
+              <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+                <UTooltip text="Mover todos para a equipe esquerda">
+                  <UButton
+                    icon="i-lucide-move-up-left"
+                    size="sm"
+                    square
+                    variant="ghost"
+                    aria-label="Mover todos para a equipe esquerda"
+                    :disabled="!podeEditar || !bandejas[time.id].length"
+                    @click="moverBandeja(time.id, 'esquerda')"
+                  />
+                </UTooltip>
+
+                <div class="text-center">
+                  <h4 class="font-semibold">{{ time.titulo }}</h4>
+                  <span class="text-xs text-muted">{{ bandejas[time.id].length }}</span>
+                </div>
+
+                <UTooltip text="Mover todos para a equipe direita">
+                  <UButton
+                    icon="i-lucide-move-up-right"
+                    size="sm"
+                    square
+                    variant="ghost"
+                    aria-label="Mover todos para a equipe direita"
+                    :disabled="!podeEditar || !bandejas[time.id].length"
+                    @click="moverBandeja(time.id, 'direita')"
+                  />
+                </UTooltip>
+              </div>
+            </template>
+
+            <VueDraggableNext
+              v-model="bandejas[time.id]"
+              :group="grupoDrag"
+              :disabled="!podeEditar"
+              item-key="id"
+              class="flex min-h-32 flex-col gap-2"
+              @change="agendarPersistencia"
+            >
+              <ItemJogadorSelecao
+                v-for="jogador in bandejas[time.id]"
+                :key="jogador.id"
+                :jogador="jogador"
+              />
+            </VueDraggableNext>
+          </UCard>
+        </div>
+      </div>
+    </section>
   </UCard>
 </template>
-
-<style scoped>
-.jogadores-move,
-.jogadores-enter-active,
-.jogadores-leave-active {
-  transition: all 250ms ease;
-}
-
-.jogadores-enter-from,
-.jogadores-leave-to {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
-.jogadores-leave-active {
-  position: absolute;
-}
-</style>

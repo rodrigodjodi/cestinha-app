@@ -1,128 +1,149 @@
-import { type Jogo, type Escalacao } from "@/schemas/jogo.schema";
-import { type Presenca } from "@/schemas/presenca.schema";
-import { type Jogador } from "@/schemas/jogador.schema";
-import { updateDoc, doc, serverTimestamp, increment } from "firebase/firestore";
+import type { Jogo } from '@/schemas/jogo.schema'
+import type { Jogador } from '@/schemas/jogador.schema'
+import type { EquipeJogo } from '@/schemas/equipe.schema'
+import { updateDoc, doc, serverTimestamp, increment } from 'firebase/firestore'
 import { apiFetch } from '@/services/apiFetch'
 
-export const useJogoStore = defineStore("jogo", () => {
-  const db = useFirestore();
-  const jogo = ref<Jogo | null>(null);
-  const presencas = ref<Presenca[]>([])
+type ComposicaoJogo = {
+  equipes: {
+    esquerda: EquipeJogo
+    direita: EquipeJogo
+  }
+  banco: string[]
+}
+
+export const useJogoStore = defineStore('jogo', () => {
+  const db = useFirestore()
+  const user = useCurrentUser()
+  const jogo = ref<Jogo | null>(null)
   const jogadores = ref<Jogador[]>([])
+
   function setJogo(data: Jogo) {
-    jogo.value = data;
+    jogo.value = data
   }
-  function setPresencas(data: Presenca[]) {
-    presencas.value = data;
-  }
+
   function setJogadores(data: Jogador[]) {
-    jogadores.value = data;
+    jogadores.value = data
   }
 
-const jogadoresMap = computed(() => {
-  return new Map(
-    jogadores.value.map(j => [j.id, j])
+  const jogadoresMap = computed(() => new Map(
+    jogadores.value.map(jogador => [jogador.id, jogador])
+  ))
+
+  function resolverJogadores(ids: string[]) {
+    return ids.flatMap(id => {
+      const jogador = jogadoresMap.value.get(id)
+      return jogador ? [jogador] : []
+    })
+  }
+
+  const equipeEsquerda = computed(() =>
+    resolverJogadores(jogo.value?.equipes.esquerda.jogadores ?? [])
   )
-})
-// isso aqui basicamente é um join entre jogadores x presencas
-const jogadoresPresentes = computed<Jogador[]>(() => {
-  return presencas.value.flatMap(presenca => {
-    return jogadoresMap.value.get(presenca.jogadorId)
-  })
-})
+  const equipeDireita = computed(() =>
+    resolverJogadores(jogo.value?.equipes.direita.jogadores ?? [])
+  )
+  const banco = computed(() => resolverJogadores(jogo.value?.banco ?? []))
 
-const timeA = computed(() => {
-  return jogadoresPresentes.value
-  .filter(jogador => jogo.value?.escalacao?.[jogador.id]?.time === 'A')
-})
-const timeB = computed(() => {
-  return jogadoresPresentes.value
-  .filter(jogador => jogo.value?.escalacao?.[jogador.id]?.time === 'B')
-})
-const banco = computed(() => {
-  return jogadoresPresentes.value.filter(jogador => {
-    return !jogo.value?.escalacao?.[jogador.id]
-  })
-})
-const docRefJogo = computed(() => doc(db, `jogos/${jogo.value?.id}`))
+  function obterDocRefJogo() {
+    if (!jogo.value) {
+      throw new Error('Jogo não definido')
+    }
+    return doc(db, 'jogos', jogo.value.id)
+  }
+
   function iniciar() {
-    return updateDoc(docRefJogo.value, {
-      'timer.status': "rodando",
+    return updateDoc(obterDocRefJogo(), {
+      'timer.status': 'rodando',
       'timer.iniciadoEm': serverTimestamp(),
-    });
+    })
   }
+
   function pausar() {
-    return updateDoc(docRefJogo.value, {
-      'timer.status': "pausado",
+    return updateDoc(obterDocRefJogo(), {
+      'timer.status': 'pausado',
       'timer.pausadoEm': serverTimestamp(),
-    });
+    })
   }
-  function retomar(tempoPausaAtual:number) {
-    return updateDoc(docRefJogo.value, {
-      'timer.status': "rodando",
+
+  function retomar(tempoPausaAtual: number) {
+    return updateDoc(obterDocRefJogo(), {
+      'timer.status': 'rodando',
       'timer.pausadoEm': null,
-      'timer.tempoPausadoTotalMs': increment(tempoPausaAtual)
-    });
+      'timer.tempoPausadoTotalMs': increment(tempoPausaAtual),
+    })
   }
 
   function finalizar() {
-    return updateDoc(docRefJogo.value, {
-      'timer.status': "finalizado",
+    return updateDoc(obterDocRefJogo(), {
+      'timer.status': 'finalizado',
       'timer.pausadoEm': null,
       'timer.finalizadoEm': serverTimestamp(),
-    });
+    })
   }
 
   function reiniciar() {
-    return updateDoc(docRefJogo.value, {
-      'timer.status': "ocioso",
+    return updateDoc(obterDocRefJogo(), {
+      'timer.status': 'ocioso',
       'timer.iniciadoEm': null,
       'timer.pausadoEm': null,
       'timer.finalizadoEm': null,
-      'timer.tempoPausadoTotalMs': 0
-    });
+      'timer.tempoPausadoTotalMs': 0,
+    })
   }
+
   function limparStore() {
-    jogo.value = null;
+    jogo.value = null
     jogadores.value = []
-    presencas.value = []
   }
-  type AtualizacaoEscalacao = Record<string, { time: 'A' | 'B', ordem?: number }>
-  // tem que funcionar com {escalacao.${idJogador}:{time: 'A' | 'B'}}
-  function gravarEscalacao(novaEscalacao: AtualizacaoEscalacao) {
-    console.log("gravarEscalacao ", novaEscalacao);
-    if (!jogo.value) return;
-    return updateDoc(docRefJogo.value, novaEscalacao)
+
+  function gravarComposicao(composicao: ComposicaoJogo) {
+    if (!jogo.value) {
+      throw new Error('Jogo não definido')
+    }
+    if (jogo.value.anotadorId !== user.value?.uid) {
+      throw new Error('Somente o anotador pode editar a preparação do jogo')
+    }
+    return updateDoc(obterDocRefJogo(), {
+      equipes: composicao.equipes,
+      banco: composicao.banco,
+    })
   }
-  function atribuirAnotacao(usuarioId:string | undefined) {
+
+  function atribuirAnotacao(usuarioId: string | undefined) {
     return apiFetch(`/api/jogos/${jogo.value?.id}/atribuir-anotacao`, {
       method: 'POST',
-      body: {anotadorId: usuarioId || null}
-    });
+      body: { anotadorId: usuarioId || null },
+    })
   }
-  function definirOffsetVideo(tempoVideo:number) {
-    return updateDoc(docRefJogo.value, {videoOffset:tempoVideo})
+
+  function definirOffsetVideo(tempoVideo: number) {
+    return updateDoc(obterDocRefJogo(), { videoOffset: tempoVideo })
   }
+
   return {
     jogo,
+    jogadores,
+    jogadoresMap,
+    equipeEsquerda,
+    equipeDireita,
+    banco,
     setJogo,
     setJogadores,
-    setPresencas,
     iniciar,
     pausar,
     retomar,
     finalizar,
     reiniciar,
     limparStore,
-    gravarEscalacao,
+    gravarComposicao,
     status: computed(() => jogo.value?.timer.status),
     iniciadoEm: computed(() => jogo.value?.timer.iniciadoEm?.toMillis()),
     pausadoEm: computed(() => jogo.value?.timer.pausadoEm?.toMillis()),
     finalizadoEm: computed(() => jogo.value?.timer.finalizadoEm?.toMillis()),
     duracao: computed(() => jogo.value?.timer.duracao),
     tempoPausadoTotalMs: computed(() => jogo.value?.timer.tempoPausadoTotalMs),
-    timeA, timeB, banco, jogadoresPresentes,
     atribuirAnotacao,
-    definirOffsetVideo
-  };
-});
+    definirOffsetVideo,
+  }
+})

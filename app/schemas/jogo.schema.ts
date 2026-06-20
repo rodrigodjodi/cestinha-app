@@ -2,6 +2,12 @@ import { Timestamp } from 'firebase/firestore'
 import { z } from 'zod'
 import { equipeJogoSchema, listaJogadoresSchema } from './equipe.schema'
 
+export const criarJogoSchema = z.object({
+  grupoId: z.string().min(1),
+  diaId: z.string().min(1),
+  anotadorId: z.string().min(1).nullable(),
+})
+
 export const jogoStatusSchema = z.enum([
   'ocioso',
   'rodando',
@@ -70,5 +76,6 @@ export const jogoSchema = baseJogoSchema.safeExtend({
 })
 
 export type BaseJogo = z.input<typeof baseJogoSchema>
+export type CriarJogo = z.infer<typeof criarJogoSchema>
 export type Jogo = z.output<typeof jogoSchema>
 export type JogoStatus = z.infer<typeof jogoStatusSchema>
