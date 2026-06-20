@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import type { Jogador } from '~/schemas/jogador.schema';
 defineProps<{
-  jogador: {
-    id: string
-    nome: string
-  }
-  subtitulo?: string
+  jogador: Jogador
+  subtitulo?: string|undefined
   selected?: boolean
 }>()
 
@@ -34,8 +32,8 @@ defineEmits<{
           {{ jogador.nome }}
         </p>
 
-        <p class="text-muted text-xs capitalize">
-          {{ subtitulo || 'Jogador' }}
+        <p v-if="subtitulo !== ''" class="text-muted text-xs capitalize">
+          {{ subtitulo}}
         </p>
       </div>
     </div>

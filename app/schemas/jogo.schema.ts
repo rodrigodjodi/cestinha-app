@@ -25,6 +25,7 @@ export const baseJogoSchema = z.object({
   grupoId: z.string().min(1),
   diaId: z.string().min(1),
   videoId: z.string().min(1).nullable().default(null),
+  videoOffset: z.number().optional().default(0),
   escalacao: escalacaoSchema,
   anotadorId: z.string().min(1).nullable().default(null),
   timer: timerSchema

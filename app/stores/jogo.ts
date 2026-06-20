@@ -18,65 +18,47 @@ export const useJogoStore = defineStore("jogo", () => {
   function setJogadores(data: Jogador[]) {
     jogadores.value = data;
   }
-  type ItemJogadorEscalacao = {
-  id: string
-  nome: string
-  subtitulo?: string
-  fotoUrl?: string
-}
+
 const jogadoresMap = computed(() => {
   return new Map(
     jogadores.value.map(j => [j.id, j])
   )
 })
 // isso aqui basicamente é um join entre jogadores x presencas
-const itensPresencaLista = computed<ItemJogadorEscalacao[]>(() => {
+const jogadoresPresentes = computed<Jogador[]>(() => {
   return presencas.value.flatMap(presenca => {
-    const jogador = jogadoresMap.value.get(presenca.jogadorId)
-    if (!jogador) return []
-    return {
-      id: jogador.id,
-      nome: jogador.nome,
-      fotoUrl: jogador.fotoUrl || '',
-      subtitulo: ''
-    }
+    return jogadoresMap.value.get(presenca.jogadorId)
   })
 })
 
 const timeA = computed(() => {
-  return itensPresencaLista.value
-  .filter(j => jogo.value?.escalacao?.[j.id]?.time === 'A')
+  return jogadoresPresentes.value
+  .filter(jogador => jogo.value?.escalacao?.[jogador.id]?.time === 'A')
 })
 const timeB = computed(() => {
-  return itensPresencaLista.value
-  .filter(j => jogo.value?.escalacao?.[j.id]?.time === 'B')
+  return jogadoresPresentes.value
+  .filter(jogador => jogo.value?.escalacao?.[jogador.id]?.time === 'B')
 })
 const banco = computed(() => {
-  return itensPresencaLista.value.filter(itemJogador => {
-    return !jogo.value?.escalacao?.[itemJogador.id]
+  return jogadoresPresentes.value.filter(jogador => {
+    return !jogo.value?.escalacao?.[jogador.id]
   })
 })
+const docRefJogo = computed(() => doc(db, `jogos/${jogo.value?.id}`))
   function iniciar() {
-    if (!jogo.value?.id) return;
-    const db = useFirestore();
-    const docRefJogo = doc(db, `jogos/${jogo.value?.id}`);
-    return updateDoc(docRefJogo, {
+    return updateDoc(docRefJogo.value, {
       'timer.status': "rodando",
       'timer.iniciadoEm': serverTimestamp(),
     });
   }
   function pausar() {
-    if (!jogo.value?.id) return;
-    const docRefJogo = doc(db, `jogos/${jogo.value?.id}`);
-    return updateDoc(docRefJogo, {
+    return updateDoc(docRefJogo.value, {
       'timer.status': "pausado",
       'timer.pausadoEm': serverTimestamp(),
     });
   }
   function retomar(tempoPausaAtual:number) {
-    if (!jogo.value?.id) return;
-    const docRefJogo = doc(db, `jogos/${jogo.value?.id}`);
-    return updateDoc(docRefJogo, {
+    return updateDoc(docRefJogo.value, {
       'timer.status': "rodando",
       'timer.pausadoEm': null,
       'timer.tempoPausadoTotalMs': increment(tempoPausaAtual)
@@ -84,9 +66,7 @@ const banco = computed(() => {
   }
 
   function finalizar() {
-    if (!jogo.value?.id) return;
-    const docRefJogo = doc(db, `jogos/${jogo.value?.id}`);
-    return updateDoc(docRefJogo, {
+    return updateDoc(docRefJogo.value, {
       'timer.status': "finalizado",
       'timer.pausadoEm': null,
       'timer.finalizadoEm': serverTimestamp(),
@@ -94,9 +74,7 @@ const banco = computed(() => {
   }
 
   function reiniciar() {
-    if (!jogo.value?.id) return;
-    const docRefJogo = doc(db, `jogos/${jogo.value?.id}`);
-    return updateDoc(docRefJogo, {
+    return updateDoc(docRefJogo.value, {
       'timer.status': "ocioso",
       'timer.iniciadoEm': null,
       'timer.pausadoEm': null,
@@ -114,14 +92,16 @@ const banco = computed(() => {
   function gravarEscalacao(novaEscalacao: AtualizacaoEscalacao) {
     console.log("gravarEscalacao ", novaEscalacao);
     if (!jogo.value) return;
-    const docRefJogo = doc(db, `jogos/${jogo.value?.id}`);
-    return updateDoc(docRefJogo, novaEscalacao)
+    return updateDoc(docRefJogo.value, novaEscalacao)
   }
   function atribuirAnotacao(usuarioId:string | undefined) {
     return apiFetch(`/api/jogos/${jogo.value?.id}/atribuir-anotacao`, {
       method: 'POST',
       body: {anotadorId: usuarioId || null}
     });
+  }
+  function definirOffsetVideo(tempoVideo:number) {
+    return updateDoc(docRefJogo.value, {videoOffset:tempoVideo})
   }
   return {
     jogo,
@@ -141,7 +121,8 @@ const banco = computed(() => {
     finalizadoEm: computed(() => jogo.value?.timer.finalizadoEm?.toMillis()),
     duracao: computed(() => jogo.value?.timer.duracao),
     tempoPausadoTotalMs: computed(() => jogo.value?.timer.tempoPausadoTotalMs),
-    timeA, timeB, banco,
-    atribuirAnotacao
+    timeA, timeB, banco, jogadoresPresentes,
+    atribuirAnotacao,
+    definirOffsetVideo
   };
 });

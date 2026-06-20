@@ -23,6 +23,7 @@
     "vue": "^3.5.38",
     "vue-draggable-next": "^2.3.0",
     "vuefire": "^3.2.3",
+    "youtube-player": "^5.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

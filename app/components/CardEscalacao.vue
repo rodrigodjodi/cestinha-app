@@ -147,7 +147,7 @@ async function handleDragChange(ev: DragEvent) {
       />
     </div>
 
-    <!-- PRESENÇAS: desde aqui preciso que ela tente preencher a tela -->
+    <!-- PRESENÇAS:  -->
     <div class="mt-2 flex flex-col flex-1 min-h-0">
       <div class="mb-3 flex items-center justify-between">
         <h3 class="font-medium">

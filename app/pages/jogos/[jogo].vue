@@ -43,7 +43,7 @@ onBeforeUnmount(() => { jogoStore.limparStore()})
     <template #video>
       <div class="p-2">
         <FormYoutubeVideo v-if="!jogo?.videoId" :jogoId="jogo!.id" />
-        <AnotacaoVideo v-else />
+        <AnotacaoVideo v-else/>
       </div>
     </template>
     <template #stats>
