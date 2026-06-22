@@ -9,6 +9,7 @@ import {
   signOut
 } from "firebase/auth";
 import { useFirebaseAuth } from "vuefire";
+import { redirectSeguro } from "~/utils/redirectSeguro";
 // Esse arquivo trata exclusivamente das interações com o usuário do Firebase, como registrar, entrar, atualizar perfil, etc.
 //  Ele é usado tanto na store de usuário quanto em outros lugares onde precisamos interagir com o usuário do Firebase.
 export default function () {
@@ -50,10 +51,7 @@ export default function () {
       await updateProfile(userCredential.user, {
         displayName: event.data.nome,
       });
-      const redirect = typeof route.query.redirect === 'string'
-        ? route.query.redirect
-        : '/painel'
-      await navigateTo(redirect)
+      await navigateTo(redirectSeguro(route.query.redirect))
     } catch (e) {
       console.error("Erro ao registrar:", (e as AuthError).code);
       switch ((e as AuthError).code) {
@@ -97,10 +95,7 @@ export default function () {
         event.data.email,
         event.data.senha,
       );
-      const redirect = typeof route.query.redirect === 'string'
-        ? route.query.redirect
-        : '/painel'
-      await navigateTo(redirect)
+      await navigateTo(redirectSeguro(route.query.redirect))
     } catch (e) {
       console.error(e);
       console.log((e as AuthError).code);

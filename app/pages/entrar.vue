@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { loginSchema } from '~/schemas/auth.schema'
 // defines, emits, props, injections
-definePageMeta({ layout: 'login'})
+definePageMeta({ layout: 'login', middleware: ['guest'] })
 
 // composables
 const { loginFormState, carregando, serverErrors, handleFormError, entrar} = useFirebaseUser()

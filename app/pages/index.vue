@@ -2,11 +2,6 @@
 definePageMeta({
   layout: 'splash'
 })
-console.log('API KEY:', process.env.NUXT_PUBLIC_FIREBASE_API_KEY)
-
-  const config = useRuntimeConfig()
-
-  console.log('runtimeConfig', config)
 </script>
 
 <template>
