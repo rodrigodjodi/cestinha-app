@@ -1,6 +1,10 @@
 import type { Jogo } from '@/schemas/jogo.schema'
 import type { Jogador } from '@/schemas/jogador.schema'
 import type { EquipeJogo } from '@/schemas/equipe.schema'
+import type {
+  CriarJogadaInput,
+  CriarJogadaResponse,
+} from '@/schemas/jogada.schema'
 import { updateDoc, doc, serverTimestamp, increment } from 'firebase/firestore'
 import { apiFetch } from '@/services/apiFetch'
 
@@ -121,6 +125,20 @@ export const useJogoStore = defineStore('jogo', () => {
     return updateDoc(obterDocRefJogo(), { 'video.offsetMs': offsetMs })
   }
 
+  function anotarJogada(input: CriarJogadaInput) {
+    if (!jogo.value) {
+      throw new Error('Jogo não definido')
+    }
+
+    return apiFetch<CriarJogadaResponse>(
+      `/api/jogos/${jogo.value.id}/jogadas`,
+      {
+        method: 'POST',
+        body: input,
+      }
+    )
+  }
+
   return {
     jogo,
     jogadores,
@@ -148,5 +166,6 @@ export const useJogoStore = defineStore('jogo', () => {
     videoThumbUrl: computed(() => jogo.value?.video.thumbUrl),
     atribuirAnotacao,
     definirOffsetMs,
+    anotarJogada,
   }
 })
