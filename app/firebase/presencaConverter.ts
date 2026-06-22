@@ -9,7 +9,7 @@ export const presencaConverter: FirestoreDataConverter<ParseResult<Presenca>> = 
     return presenca
   },
   fromFirestore(snapshot, options) {
-    let rawData = {
+    const rawData = {
       id: snapshot.id,
       ...snapshot.data(options)
     }

@@ -41,14 +41,21 @@ const tabItems = [
 
   <UTabs :items="tabItems" class="mt-4 flex-1 min-h-0">
     <template #presencas>
-      <BotaoConfirmacao v-if="dia?.status === '0.inscrevendo'"  :diaId="diaId"
-    :grupoId="grupoId" :presencas="presencas" :jogadorLogado="jogadorLogado"/>
+      <BotaoConfirmacao
+        v-if="dia"
+        :diaId="diaId"
+        :grupoId="grupoId"
+        :presencas="presencas"
+        :jogadorLogado="jogadorLogado"
+        :diaStatus="dia.status"
+      />
       <CardPresencas
         :jogadores="jogadores"
         :presencas="presencas"
         :jogadorLogado="jogadorLogado"
         :diaId="diaId"
         :grupoId="grupoId"
+        :diaStatus="dia?.status ?? '2.concluido'"
       />
     </template>
 

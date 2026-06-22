@@ -14,7 +14,7 @@ export function useListaPresencasDiaGrupo(diaId:MaybeRefOrGetter<string|undefine
       where('grupoId', '==', toValue(grupoId)),
       where('diaId', '==', toValue(diaId)),
       orderBy('situacao'), // ! garanta que existe campo situação, senão não retorna
-      orderBy('criadoEm')
+      orderBy('situacaoEm')
     )
   })
   const { data, pending, error} = useCollection(q, {ssrKey:ssrKey.value})
