@@ -31,11 +31,28 @@ async function novoJogo() {
         {{ jogos?.length }} Jogos
       </UBadge>
     </div>
-    <div class="flex flex-col">
-      <nuxt-link v-for="jogo in jogos" :key="jogo.id" 
+    <div class="grid gap-3 sm:grid-cols-2">
+      <nuxt-link v-for="jogo in jogos" :key="jogo.id"
         :to="`/jogos/${jogo.id}`"
-        class="p-2 border rounded mb-2 hover:bg-accented">
-        {{ jogo.nome }}
+        class="overflow-hidden rounded-lg border hover:bg-accented">
+        <div class="aspect-video bg-elevated">
+          <img
+            v-if="jogo.video.thumbUrl"
+            :src="jogo.video.thumbUrl"
+            :alt="`Thumbnail de ${jogo.nome}`"
+            class="size-full object-cover"
+          />
+          <div
+            v-else
+            class="flex size-full flex-col items-center justify-center gap-2 text-muted"
+          >
+            <UIcon name="i-lucide-video-off" class="size-8" />
+            <span class="text-sm">Sem vídeo</span>
+          </div>
+        </div>
+        <div class="p-3 font-medium">
+          {{ jogo.nome }}
+        </div>
       </nuxt-link>
     </div>
     <div class="flex gap-3 items-center">

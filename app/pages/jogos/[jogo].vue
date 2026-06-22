@@ -52,8 +52,12 @@ onBeforeUnmount(() => { jogoStore.limparStore()})
     </template>
     <template #video>
       <div class="p-2">
-        <FormYoutubeVideo v-if="!jogo?.videoId" :jogoId="jogo!.id" />
-        <AnotacaoVideo v-else/>
+        <FormYoutubeVideo
+          v-if="jogo && !jogo.video.youtubeId"
+          :jogo-id="jogo.id"
+          :grupo-id="jogo.grupoId"
+        />
+        <AnotacaoVideo v-else-if="jogo?.video.youtubeId" />
       </div>
     </template>
     <template #stats>

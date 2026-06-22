@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import YoutubePlayer from 'youtube-player'
 const props = defineProps<{
-  videoId: string
+  youtubeId: string
 }>()
 const playerRef = useTemplateRef('player')
 const player = shallowRef<any>(null)
@@ -11,7 +11,7 @@ const player = shallowRef<any>(null)
 onMounted(async ()=>{
   if(!playerRef) return
   player.value = YoutubePlayer(playerRef.value, {
-    videoId: props.videoId,
+    videoId: props.youtubeId,
     playerVars: {
         rel: 0,
       },

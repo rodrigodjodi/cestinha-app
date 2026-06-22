@@ -1,10 +1,16 @@
 import { z } from 'zod'
+
+export const youtubeIdSchema = z.string().regex(
+  /^[A-Za-z0-9_-]{11}$/,
+  'ID do YouTube inválido'
+)
+
 function extrairYoutubeId(url: string): string | null {
   const patterns = [
-    /youtube\.com\/watch\?v=([^&]+)/,
-    /youtu\.be\/([^?]+)/,
-    /youtube\.com\/embed\/([^?]+)/,
-    /youtube\.com\/shorts\/([^?]+)/,
+    /youtube\.com\/watch\?(?:[^#]*&)?v=([A-Za-z0-9_-]{11})(?:[&#]|$)/,
+    /youtu\.be\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})(?:[?&#/]|$)/,
   ]
 
   for (const pattern of patterns) {
@@ -19,7 +25,6 @@ function extrairYoutubeId(url: string): string | null {
 }
 
 export const youtubeSchema = z.object({
-  jogoId: z.string().min(1),
   videoUrl: z
     .string()
     .trim()
@@ -28,7 +33,14 @@ export const youtubeSchema = z.object({
       (url) => extrairYoutubeId(url) !== null,
       'Não parece um URL válida do YouTube'
     )
-    .transform((url) => extrairYoutubeId(url)!)
+    .transform((url) => youtubeIdSchema.parse(extrairYoutubeId(url)))
+})
+
+export const anexarVideoYoutubeSchema = z.object({
+  jogoId: z.string().min(1),
+  grupoId: z.string().min(1),
+  youtubeId: youtubeIdSchema,
 })
 
 export type Youtube = z.output<typeof youtubeSchema>
+export type AnexarVideoYoutube = z.infer<typeof anexarVideoYoutubeSchema>

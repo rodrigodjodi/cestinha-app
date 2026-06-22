@@ -18,7 +18,10 @@ export function anotaJogada(tipo: TipoJogada, jogadorId: string, assistenciaId?:
     jogadorId,
     tipo,
     //time,
-    tempoMs: tempoVideo.value,
+    tempoMs: Math.max(
+      0,
+      Math.round(tempoVideo.value - jogo.video.offsetMs)
+    ),
     ...(assistenciaId && ['2PM', '3PM'].includes(tipo)
       ? { assistenciaId }
       : {}),

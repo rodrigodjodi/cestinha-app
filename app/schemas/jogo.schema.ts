@@ -22,11 +22,25 @@ const timerSchema = z.object({
   tempoPausadoTotalMs: z.int().nonnegative().default(0),
   duracao: z.int().nonnegative().default(615)
 })
+
+const videoPadrao = {
+  youtubeId: null,
+  offsetMs: 0,
+  thumbUrl: null,
+  thumbPath: null,
+} as const
+
+export const videoSchema = z.object({
+  youtubeId: z.string().regex(/^[A-Za-z0-9_-]{11}$/).nullable().default(null),
+  offsetMs: z.number().int().nonnegative().default(0),
+  thumbUrl: z.url().nullable().default(null),
+  thumbPath: z.string().min(1).nullable().default(null),
+}).default(videoPadrao)
+
 export const baseJogoSchema = z.object({
   grupoId: z.string().min(1),
   diaId: z.string().min(1),
-  videoId: z.string().min(1).nullable().default(null),
-  videoOffset: z.number().optional().default(0),
+  video: videoSchema,
   anotadorId: z.string().min(1).nullable().default(null),
   timer: timerSchema,
   equipes: z.object({

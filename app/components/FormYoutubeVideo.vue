@@ -1,31 +1,39 @@
 <script setup lang="ts">
 import { youtubeSchema, type Youtube } from '~/schemas/youtube.schema'
-import type { FormSubmitEvent } from "@nuxt/ui";
-import { apiFetch } from '@/services/apiFetch'
+import { anexarVideoYoutube } from '~/services/anexarVideoYoutube'
+import type { FormErrorEvent, FormSubmitEvent } from '@nuxt/ui'
+
 const props = defineProps<{
   jogoId: string
+  grupoId: string
 }>()
+
+const toast = useToast()
 const formState = reactive<Partial<Youtube>>({
   videoUrl: '',
-  jogoId: props.jogoId
 })
-const serverErrors = ref<Record<string, string>>({});
-// serverErrors.value.videoUrl = "teste"
+const serverErrors = ref<Record<string, string>>({})
+const carregando = ref(false)
+
 async function atualizarDoc(event: FormSubmitEvent<Youtube>) {
-  console.log("form enviado com dados: ", event.data)
   serverErrors.value = {}
+  carregando.value = true
   try {
-    await apiFetch('/api/jogos/anexar-video', {
-      method: 'POST',
-      body: event.data
-    });
+    await anexarVideoYoutube({
+      jogoId: props.jogoId,
+      grupoId: props.grupoId,
+      youtubeId: event.data.videoUrl,
+    })
   } catch (error) {
-    serverErrors.value.videoUrl = error.code
-    console.error("Erro ao anexar video: ", error.code)
+    console.error('Erro ao anexar vídeo:', error)
+    serverErrors.value.videoUrl = 'Não foi possível anexar o vídeo.'
+  } finally {
+    carregando.value = false
   }
 }
-function handleFormError(e) {
-  console.error(e)
+
+function handleFormError(event: FormErrorEvent) {
+  console.error(event.errors)
 }
 </script>
 
@@ -35,7 +43,7 @@ function handleFormError(e) {
       <UInput v-model="formState.videoUrl" placeholder="Cole a URL do youtube" size="xl" class="w-full" />
     </UFormField>
     <div class="mt-4 flex justify-end">
-      <UButton type="submit" label="Salvar vídeo" />
+      <UButton type="submit" label="Salvar vídeo" :loading="carregando" />
     </div>
   </UForm>
 </template>

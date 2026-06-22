@@ -117,8 +117,8 @@ export const useJogoStore = defineStore('jogo', () => {
     })
   }
 
-  function definirOffsetVideo(tempoVideo: number) {
-    return updateDoc(obterDocRefJogo(), { videoOffset: tempoVideo })
+  function definirOffsetMs(offsetMs: number) {
+    return updateDoc(obterDocRefJogo(), { 'video.offsetMs': offsetMs })
   }
 
   return {
@@ -143,7 +143,10 @@ export const useJogoStore = defineStore('jogo', () => {
     finalizadoEm: computed(() => jogo.value?.timer.finalizadoEm?.toMillis()),
     duracao: computed(() => jogo.value?.timer.duracao),
     tempoPausadoTotalMs: computed(() => jogo.value?.timer.tempoPausadoTotalMs),
+    youtubeId: computed(() => jogo.value?.video.youtubeId),
+    offsetMs: computed(() => jogo.value?.video.offsetMs ?? 0),
+    videoThumbUrl: computed(() => jogo.value?.video.thumbUrl),
     atribuirAnotacao,
-    definirOffsetVideo,
+    definirOffsetMs,
   }
 })

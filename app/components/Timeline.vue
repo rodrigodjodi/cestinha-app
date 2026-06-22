@@ -1,10 +1,16 @@
 <script setup lang="ts">
 const tempoVideo: Ref<number> = useState('tempo-video')
-const { definirOffsetVideo } = useJogoStore()
+const jogoStore = useJogoStore()
+const { offsetMs } = storeToRefs(jogoStore)
+const { definirOffsetMs } = jogoStore
 const offsetLoading = ref(false)
+const tempoJogoMs = computed(() =>
+  Math.max(0, Math.round(tempoVideo.value - offsetMs.value))
+)
+
 function setOffset() {
   offsetLoading.value = true
-  definirOffsetVideo(Math.round(tempoVideo.value))
+  definirOffsetMs(Math.round(tempoVideo.value))
   .then()
   .catch(err=>{console.error(err)})
   .finally(()=>offsetLoading.value = false)
@@ -31,7 +37,7 @@ defineShortcuts({
 
     <UButton size="xl" class="px-4" icon="i-lucide-chevrons-right" color="neutral" variant="soft" />
   </UFieldGroup>
-  {{ tempoVideo }}
+  {{ tempoJogoMs }}
 </template>
 
 

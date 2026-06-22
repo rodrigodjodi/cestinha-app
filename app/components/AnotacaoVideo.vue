@@ -32,7 +32,7 @@ function closeModalAnotacao(){
   >
     <section class="video-zone">
       <div class="aspect-video max-h-[75vh]">
-        <YoutubePlayer :videoId="jogo!.videoId!" />
+        <YoutubePlayer :youtube-id="jogo!.video.youtubeId!" />
         </div>
     </section>
 
