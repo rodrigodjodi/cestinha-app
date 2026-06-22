@@ -1,60 +1,202 @@
 <script setup lang="ts">
 import { useScreenOrientation } from '@vueuse/core'
-import { type Jogo } from '~/schemas/jogo.schema';
-import YoutubePlayer from './YoutubePlayer.vue';
-const orientation = useScreenOrientation()
-const jogoStore = useJogoStore()
-const anotacaoState = useVideoAnotacao()
-const modealAnotacao = ref(false)
-const isLandscape = computed(() => {
-  return orientation.orientation.value?.includes('landscape')
-})
-const { jogo, timeA, timeB } = storeToRefs(jogoStore)
-const jogadorSelecionadoId = ref<string|null>(null)
-function anotaJogada(jogadorId:string){    
-  if(!jogadorId) return
-  jogadorSelecionadoId.value = jogadorId
-  modealAnotacao.value = true
-}
-function closeModalAnotacao(){
-  console.log(`closeModalAnotacao`)
-  jogadorSelecionadoId.value = null
+import type { LadoEquipe } from '~/schemas/equipe.schema'
+
+type YoutubePlayerExposed = {
+  getTempoAtualMs: () => Promise<number>
+  pausar: () => Promise<void>
+  seekToMs: (tempoMs: number) => Promise<void>
 }
 
+type AnotacaoPendente = {
+  jogadorId: string
+  equipe: LadoEquipe
+  tempoMs: number
+}
+
+type EscolhaAnotacaoJogada = {
+  tipo: '2PM' | '3PM'
+  assistenciaId?: string
+}
+
+const orientation = useScreenOrientation()
+const jogoStore = useJogoStore()
+const toast = useToast()
+const { calcularTempoJogoMs } = useVideoAnotacao()
+const {
+  jogo,
+  equipeEsquerda,
+  equipeDireita,
+  youtubeId,
+  offsetMs,
+} = storeToRefs(jogoStore)
+
+const youtubePlayer = ref<YoutubePlayerExposed | null>(null)
+const anotacaoPendente = ref<AnotacaoPendente | null>(null)
+const modalAnotacaoAberto = ref(false)
+const enviandoAnotacao = ref(false)
+
+const isLandscape = computed(() =>
+  orientation.orientation.value?.includes('landscape')
+)
+
+const candidatosAssistencia = computed(() => {
+  const pendente = anotacaoPendente.value
+  if (!pendente) return []
+
+  const jogadoresEquipe = pendente.equipe === 'esquerda'
+    ? equipeEsquerda.value
+    : equipeDireita.value
+
+  return jogadoresEquipe.filter(
+    jogador => jogador.id !== pendente.jogadorId
+  )
+})
+
+async function iniciarAnotacaoVideo(
+  jogadorId: string,
+  equipe: LadoEquipe,
+) {
+  if (!jogo.value || !youtubeId.value || !youtubePlayer.value) {
+    toast.add({
+      title: 'Vídeo indisponível',
+      description: 'Carregue o vídeo antes de iniciar uma anotação.',
+      color: 'warning',
+    })
+    return
+  }
+
+  try {
+    const tempoAtualVideoMs = await youtubePlayer.value.getTempoAtualMs()
+    const tempoJogoMs = calcularTempoJogoMs(
+      tempoAtualVideoMs,
+      offsetMs.value
+    )
+
+    anotacaoPendente.value = {
+      jogadorId,
+      equipe,
+      tempoMs: Math.round(tempoJogoMs),
+    }
+    modalAnotacaoAberto.value = true
+
+    try {
+      await youtubePlayer.value.pausar()
+    } catch (error) {
+      console.error('Não foi possível pausar o vídeo:', error)
+      toast.add({
+        title: 'Anotação aberta',
+        description: 'Não foi possível pausar o vídeo automaticamente.',
+        color: 'warning',
+      })
+    }
+  } catch (error) {
+    console.error('Não foi possível obter o tempo do vídeo:', error)
+    toast.add({
+      title: 'Não foi possível iniciar a anotação',
+      description: 'Tente novamente quando o player estiver pronto.',
+      color: 'error',
+    })
+  }
+}
+
+async function confirmarAnotacao(escolha: EscolhaAnotacaoJogada) {
+  if (!anotacaoPendente.value || enviandoAnotacao.value) return
+
+  enviandoAnotacao.value = true
+  try {
+    await jogoStore.anotarJogada({
+      ...anotacaoPendente.value,
+      ...escolha,
+    })
+    modalAnotacaoAberto.value = false
+    anotacaoPendente.value = null
+    toast.add({
+      title: 'Jogada anotada',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Não foi possível anotar a jogada:', error)
+    toast.add({
+      title: 'Não foi possível anotar a jogada',
+      description: 'Revise a escolha e tente novamente.',
+      color: 'error',
+    })
+  } finally {
+    enviandoAnotacao.value = false
+  }
+}
+
+function limparAnotacaoPendente() {
+  if (!modalAnotacaoAberto.value) {
+    anotacaoPendente.value = null
+  }
+}
 </script>
+
 <template>
   <div
     class="anotacao-layout"
     :class="{
       'anotacao-layout-landscape': isLandscape,
-      'anotacao-layout-portrait': !isLandscape
+      'anotacao-layout-portrait': !isLandscape,
     }"
   >
     <section class="video-zone">
-      <div class="aspect-video max-h-[75vh]">
-        <YoutubePlayer :youtube-id="jogo!.video.youtubeId!" />
-        </div>
-    </section>
-
-    <section class="timeline-zone">
-      <Timeline />
-    </section>
-
-    <section class="jogadores-a-zone flex flex-col gap-2">
-      <ItemJogadorSelecao v-for="jogador in timeA" :key="jogador.id"
-      :jogador="jogador" @toggle="anotaJogada(jogador.id)"
-      :selected="jogador.id === jogadorSelecionadoId"
+      <div v-if="youtubeId" class="aspect-video max-h-[75vh]">
+        <YoutubePlayer
+          ref="youtubePlayer"
+          :youtube-id="youtubeId"
+        />
+      </div>
+      <UAlert
+        v-else
+        class="m-2"
+        color="neutral"
+        variant="soft"
+        icon="i-lucide-video-off"
+        title="Nenhum vídeo anexado"
+        description="As equipes continuam disponíveis, mas a anotação por vídeo exige um vídeo."
       />
     </section>
 
-    <section class="jogadores-b-zone flex flex-col gap-2">
-      <ItemJogadorSelecao v-for="jogador in timeB" :key="jogador.id" 
-      :jogador="jogador" @toggle="anotaJogada(jogador.id)"/>
+    <section class="timeline-zone">
+      <Timeline v-if="youtubeId" />
+    </section>
+
+    <section class="equipe-esquerda-zone flex flex-col gap-2">
+      <ItemJogadorSelecao
+        v-for="jogador in equipeEsquerda"
+        :key="jogador.id"
+        :jogador="jogador"
+        :disabled="!youtubeId"
+        :selected="jogador.id === anotacaoPendente?.jogadorId"
+        @toggle="iniciarAnotacaoVideo(jogador.id, 'esquerda')"
+      />
+    </section>
+
+    <section class="equipe-direita-zone flex flex-col gap-2">
+      <ItemJogadorSelecao
+        v-for="jogador in equipeDireita"
+        :key="jogador.id"
+        :jogador="jogador"
+        :disabled="!youtubeId"
+        :selected="jogador.id === anotacaoPendente?.jogadorId"
+        @toggle="iniciarAnotacaoVideo(jogador.id, 'direita')"
+      />
     </section>
   </div>
-  <ModalAnotacaoJogada v-model:open="modealAnotacao" 
-  :jogadorId="jogadorSelecionadoId" @close="closeModalAnotacao"/>
+
+  <ModalAnotacaoJogada
+    v-model:open="modalAnotacaoAberto"
+    :jogador-id="anotacaoPendente?.jogadorId ?? null"
+    :candidatos-assistencia="candidatosAssistencia"
+    :enviando="enviandoAnotacao"
+    @confirmar="confirmarAnotacao"
+    @close="limparAnotacaoPendente"
+  />
 </template>
+
 <style scoped>
 .anotacao-layout {
   display: grid;
@@ -65,20 +207,18 @@ function closeModalAnotacao(){
 .anotacao-layout-landscape {
   grid-template-columns: 140px 1fr 140px;
   grid-template-rows: 1fr auto;
-
   grid-template-areas:
-    "jogadores-a video jogadores-b"
-    "jogadores-a timeline jogadores-b";
+    "equipe-esquerda video equipe-direita"
+    "equipe-esquerda timeline equipe-direita";
 }
 
 .anotacao-layout-portrait {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto auto 1fr;
-
   grid-template-areas:
     "video video"
     "timeline timeline"
-    "jogadores-a jogadores-b";
+    "equipe-esquerda equipe-direita";
 }
 
 .video-zone {
@@ -89,11 +229,11 @@ function closeModalAnotacao(){
   grid-area: timeline;
 }
 
-.jogadores-a-zone {
-  grid-area: jogadores-a;
+.equipe-esquerda-zone {
+  grid-area: equipe-esquerda;
 }
 
-.jogadores-b-zone {
-  grid-area: jogadores-b;
+.equipe-direita-zone {
+  grid-area: equipe-direita;
 }
 </style>

@@ -4,6 +4,7 @@ defineProps<{
   jogador: Jogador
   subtitulo?: string|undefined
   selected?: boolean
+  disabled?: boolean
 }>()
 
 defineEmits<{
@@ -17,6 +18,7 @@ defineEmits<{
     variant="outline"
     color="neutral"
     class="justify-start"
+    :disabled="disabled"
     :class="[
       selected && 'ring-2 ring-primary'
     ]"

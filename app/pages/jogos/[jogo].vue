@@ -57,7 +57,7 @@ onBeforeUnmount(() => { jogoStore.limparStore()})
           :jogo-id="jogo.id"
           :grupo-id="jogo.grupoId"
         />
-        <AnotacaoVideo v-else-if="jogo?.video.youtubeId" />
+        <AnotacaoVideo v-if="jogo" />
       </div>
     </template>
     <template #stats>

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-const tempoVideo: Ref<number> = useState('tempo-video')
+const { tempoVideoMs } = useVideoAnotacao()
 const jogoStore = useJogoStore()
 const { offsetMs } = storeToRefs(jogoStore)
 const { definirOffsetMs } = jogoStore
 const offsetLoading = ref(false)
 const tempoJogoMs = computed(() =>
-  Math.max(0, Math.round(tempoVideo.value - offsetMs.value))
+  Math.max(0, Math.round(tempoVideoMs.value - offsetMs.value))
 )
 
 function setOffset() {
   offsetLoading.value = true
-  definirOffsetMs(Math.round(tempoVideo.value))
+  definirOffsetMs(Math.round(tempoVideoMs.value))
   .then()
   .catch(err=>{console.error(err)})
   .finally(()=>offsetLoading.value = false)
