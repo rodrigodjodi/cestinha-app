@@ -16,7 +16,7 @@ export const tipoJogadaSchema = z.enum([
 export const criarJogadaInputSchema = z.object({
   jogadorId: z.string().min(1),
   tipo: tipoJogadaSchema.extract(['2PM', '3PM']),
-  tempoMs: z.number().int().nonnegative().nullable(),
+  tempoMs: z.number().int().nonnegative(),
   equipe: ladoEquipeSchema,
   assistenciaId: z.string().min(1).optional(),
 }).strict().superRefine((jogada, ctx) => {
@@ -34,7 +34,7 @@ export const baseJogadaSchema = z.object({
   jogoId: z.string().min(1),
   jogadorId: z.string().min(1),
   tipo: tipoJogadaSchema,
-  tempoMs: z.number().int().nonnegative().nullable().default(null),
+  tempoMs: z.number().int().nonnegative(),
   equipe: ladoEquipeSchema,
   assistenciaId: z.string().min(1).optional()
 }).superRefine((jogada, ctx) => {

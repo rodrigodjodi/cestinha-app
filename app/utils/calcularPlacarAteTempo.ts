@@ -10,7 +10,7 @@ export function calcularPlacarAteTempo(
   tempoLimiteMs: number
 ): Placar {
   return jogadas.reduce<Placar>((placar, jogada) => {
-    if (jogada.tempoMs === null || jogada.tempoMs > tempoLimiteMs) {
+    if (jogada.tempoMs > tempoLimiteMs) {
       return placar
     }
 
