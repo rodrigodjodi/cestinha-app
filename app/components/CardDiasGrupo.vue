@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { apiFetch } from "~/services/apiFetch";
-import { doc, setDoc, collection, deleteDoc } from 'firebase/firestore'
 import { CalendarDate } from '@internationalized/date'
 const props = defineProps<{
   /* diaId: MaybeRefOrGetter<string|undefined> */
   grupoId: MaybeRefOrGetter<string|undefined>
   
 }>()
-const db = useFirestore()
 const diaSelecionado = shallowRef<CalendarDate>()
 async function criarDia() {
   const idDiaCriado = ref<string>()
@@ -35,18 +33,6 @@ const idDiaSelecionado = computed(()=>{
   let dia = diasGrupo.value.find(el=>el.data === diaSelecionado.value?.toString())
   return dia ? dia.id : undefined
 })
-// console.log(diaSelecionado)
-// console.log(diasGrupo)
-async function excluirDia(){
-  let diaExcluir = diasGrupo.value.find(el=>el.data === diaSelecionado.value?.toString())
-  if(diaExcluir?.id){
-    await deleteDoc(doc(db, 'dias', diaExcluir.id))
-    useToast().add({
-      title: 'Sucesso!', color: 'success',
-      description:'Dia excluído'
-    })
-  }
-}
 </script>
 
 <template>
@@ -60,10 +46,6 @@ async function excluirDia(){
 
     </UCalendar>
     <template #footer >
-      <UButton v-if="idDiaSelecionado" :disabled="!diaSelecionado"
-        @click="excluirDia" color="error">
-        Excluir dia
-      </UButton>
       <UButton v-if="!listaDatas.includes(diaSelecionado?.toString())"
        :disabled="!diaSelecionado" @click="criarDia">
        Iniciar dia
