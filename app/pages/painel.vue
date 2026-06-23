@@ -3,10 +3,9 @@ import {useClipboard} from '@vueuse/core'
 // middleware
 definePageMeta({middleware: ['auth']})
 // composables
-const pageTitle = useState('pageTitle')
+const pageTitle = useState<string>('pageTitle', () => 'Painel')
 // stores
 useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
-  pageTitle.value ='Painel'
 // estado
 const { grupos, pending, errosParseGrupo } = useGruposUsuario()
 
