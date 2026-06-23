@@ -12,8 +12,11 @@ service cloud.firestore {
         && request.auth.uid in grupoDoc(grupoId).data.adminUids;
     }
     function alteraApenasTimes() {
-      return request.resource.data.diff(resource.data).changedKeys().hasOnly(['times']);
-    }
+    return request.resource.data
+      .diff(resource.data)
+      .affectedKeys()
+      .hasOnly(['times']);
+}
 
     match /convites/{convite} {
       allow get:if request.auth != null;
@@ -26,7 +29,8 @@ service cloud.firestore {
         && alteraApenasTimes();
     }
     match /grupos/{grupo} {
-      allow read: if request.auth.uid in resource.data.usuarios;
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.usuarios;
     }
     match /jogadores/{jodagor} {
       allow read: if request.auth != null;
