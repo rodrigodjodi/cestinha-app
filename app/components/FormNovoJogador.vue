@@ -1,53 +1,60 @@
 <script setup lang="ts">
-import { baseJogadorSchema, type CriacaoJogador, type Jogador } from '~/schemas/jogador.schema';
-import type { FormSubmitEvent, FormErrorEvent } from "@nuxt/ui";
-import { apiFetch } from '@/services/apiFetch'
+import type { FetchError } from 'ofetch'
+import {
+  criarJogadorInputSchema,
+  type CriacaoJogador,
+  type Jogador,
+} from '~/schemas/jogador.schema'
+import { criarJogador } from '~/services/jogador.service'
+import type { FormSubmitEvent, FormErrorEvent } from '@nuxt/ui'
+
 const props = defineProps<{
-  jogadorLogado: MaybeRefOrGetter<Jogador | null>
+  jogadorLogado: Jogador
   grupoId: string
 }>()
-console.log(props.jogadorLogado)
-// state
+
 const criacaoJogadorFormState = reactive<Partial<CriacaoJogador>>({
-  nome: "",
+  nome: '',
   grupoId: props.grupoId,
-  usuarioId: null,
-  atribuicao: 'avulso'
-});
-const serverErrors = ref<Record<string, string>>({});
-// computed
+  atribuicao: 'avulso',
+})
+const serverErrors = ref<Record<string, string>>({})
 
+function mensagemErro(error: unknown) {
+  const fetchError = error as FetchError<{ message?: string }>
+  return fetchError.data?.message
+    ?? 'Não foi possível criar o jogador.'
+}
 
-// actions
-async function criarJogador(event: FormSubmitEvent<CriacaoJogador>) {
+async function handleCriarJogador(event: FormSubmitEvent<CriacaoJogador>) {
   serverErrors.value = {}
-  console.log("[CardJogadores] Form submitted with data: ", event.data);
   try {
-    await apiFetch('/api/jogadores/criar', {
-      method: 'POST',
-      body: event.data
-    });
-  } catch (e:any) {
-    console.error("Erro ao criar jogador:", e.data.message);
-    serverErrors.value.nome = e.data.message
-  } finally {
-    criacaoJogadorFormState.nome = "";
+    await criarJogador(event.data)
+    criacaoJogadorFormState.nome = ''
+  } catch (error) {
+    serverErrors.value.nome = mensagemErro(error)
   }
 }
-function handleFormError(e: FormErrorEvent) {
-  console.error(e);
+
+function handleFormError(event: FormErrorEvent) {
+  console.error(event.errors)
 }
-const items = computed(()=>[
-  { label: "Admin", value:"admin", disabled: props.jogadorLogado?.atribuicao !== 'admin' },
-  { label: "Membro", value:"membro", disabled: false },
-  { label: "Avulso", value:"avulso", disabled: false },
+
+const items = computed(() => [
+  {
+    label: 'Admin',
+    value: 'admin',
+    disabled: props.jogadorLogado.atribuicao !== 'admin',
+  },
+  { label: 'Membro', value: 'membro', disabled: false },
+  { label: 'Avulso', value: 'avulso', disabled: false },
 ])
 </script>
 
 <template>
-  <UForm :schema="baseJogadorSchema" :state="criacaoJogadorFormState" 
-    @submit.prevent="criarJogador"
-    :disabled="props.jogadorLogado?.atribuicao === 'avulso'"
+  <UForm :schema="criarJogadorInputSchema" :state="criacaoJogadorFormState"
+    @submit.prevent="handleCriarJogador"
+    :disabled="props.jogadorLogado.atribuicao === 'avulso'"
     @error="handleFormError"
   >
     <UFormField label="Novo jogador" name="nome" :error="serverErrors.nome">

@@ -1,33 +1,35 @@
 <script setup lang="ts">
-import type { Jogador } from '~/schemas/jogador.schema';
+import type { Jogador } from '~/schemas/jogador.schema'
+
 const props = defineProps<{
-  jogadorLogado: MaybeRefOrGetter<Jogador>
-  jogadores: MaybeRefOrGetter<Jogador[]>
+  jogadorLogado: Jogador | null
+  jogadores: Jogador[]
   grupoId: string
 }>()
+
 const modalJogador = ref(false)
 const jogadoresOrdenados = computed(() => {
-  // primeiro admins, depois membros, depois avulsos, alfabético dentro desses grupos
-  return [...toValue(props.jogadores)].sort((a, b) => {
-    const ordemA = a.atribuicao === 'admin' ? 0 : a.atribuicao === 'membro' ? 1 : 2;
-    const ordemB = b.atribuicao === 'admin' ? 0 : b.atribuicao === 'membro' ? 1 : 2;
+  return [...props.jogadores].sort((a, b) => {
+    const ordemA = a.atribuicao === 'admin' ? 0 : a.atribuicao === 'membro' ? 1 : 2
+    const ordemB = b.atribuicao === 'admin' ? 0 : b.atribuicao === 'membro' ? 1 : 2
     if (ordemA !== ordemB) {
-      return ordemA - ordemB;
+      return ordemA - ordemB
     }
-    return a.nome.localeCompare(b.nome);
+    return a.nome.localeCompare(b.nome)
   })
 })
-const jogadorSelecionadoId  = ref<string | null>(null)
+
+const jogadorSelecionadoId = ref<string | null>(null)
 function openModalJogador(jogador: Jogador) {
-  console.log('abrir modal jogador', jogador)
   jogadorSelecionadoId.value = jogador.id
   modalJogador.value = true
 }
+
 const jogadorSelecionado = computed(() => {
   if (!jogadorSelecionadoId.value) {
     return null
   }
-  return toValue(props.jogadores).find(
+  return props.jogadores.find(
     j => j.id === jogadorSelecionadoId.value
   ) ?? null
 })
@@ -47,9 +49,13 @@ const jogadorSelecionado = computed(() => {
       
     </div>
     <template #footer>
-      <FormNovoJogador v-if="props.jogadorLogado?.atribuicao !== 'avulso'"
+      <FormNovoJogador v-if="jogadorLogado && jogadorLogado.atribuicao !== 'avulso'"
         :jogadorLogado="jogadorLogado" :grupoId="props.grupoId" />
     </template>
   </UCard>
-  <ModalEdicaoJogador :jogador="jogadorSelecionado" v-model:open="modalJogador" :jogadorLogado="props.jogadorLogado"/>
+  <ModalEdicaoJogador
+    :jogador="jogadorSelecionado"
+    v-model:open="modalJogador"
+    :jogadorLogado="jogadorLogado"
+  />
 </template>
