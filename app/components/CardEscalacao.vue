@@ -24,11 +24,24 @@ const bandejas = reactive<Record<TimeDiaId, Jogador[]>>({
   time3: [],
 })
 const assinaturasPendentes = new Set<string>()
+const preenchendoBanco = ref(false)
 let inicializado = false
 let temporizador: ReturnType<typeof setTimeout> | undefined
 let filaSalvamento = Promise.resolve()
 
 const podeEditar = computed(() => props.jogo.anotadorId === user.value?.uid)
+const jogoSemComposicao = computed(() =>
+  props.jogo.equipes.esquerda.jogadores.length === 0
+  && props.jogo.equipes.direita.jogadores.length === 0
+  && props.jogo.banco.length === 0
+)
+const jogadoresDosTimesDoDia = computed(() => [
+  ...new Set([
+    ...props.dia.times.time1.jogadores,
+    ...props.dia.times.time2.jogadores,
+    ...props.dia.times.time3.jogadores,
+  ]),
+])
 const jogadoresMap = computed(() => new Map(
   props.jogadores.map(jogador => [jogador.id, jogador])
 ))
@@ -153,6 +166,38 @@ function moverBandeja(timeId: TimeDiaId, lado: 'esquerda' | 'direita') {
   bandejas[timeId] = []
   agendarPersistencia()
 }
+
+async function preencherBanco() {
+  if (
+    !jogoSemComposicao.value
+    || !podeEditar.value
+    || !jogadoresDosTimesDoDia.value.length
+    || preenchendoBanco.value
+  ) {
+    return
+  }
+
+  preenchendoBanco.value = true
+  try {
+    await jogoStore.gravarComposicao({
+      equipes: props.jogo.equipes,
+      banco: jogadoresDosTimesDoDia.value,
+    })
+    toast.add({
+      title: 'Banco preenchido',
+      description: 'Os jogadores dos times do Dia foram adicionados ao jogo.',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error(error)
+    toast.add({
+      title: 'Não foi possível preencher o banco',
+      color: 'error',
+    })
+  } finally {
+    preenchendoBanco.value = false
+  }
+}
 </script>
 
 <template>
@@ -195,9 +240,22 @@ function moverBandeja(timeId: TimeDiaId, lado: 'esquerda' | 'direita') {
     <section>
       <div class="mb-3 flex items-center justify-between">
         <h3 class="text-lg font-semibold">Banco</h3>
-        <UBadge color="neutral" variant="soft">
-          {{ bandejas.time1.length + bandejas.time2.length + bandejas.time3.length }}
-        </UBadge>
+        <div class="flex items-center gap-2">
+          <UButton
+            v-if="jogoSemComposicao"
+            size="sm"
+            color="warning"
+            variant="soft"
+            :loading="preenchendoBanco"
+            :disabled="!podeEditar || !jogadoresDosTimesDoDia.length"
+            @click="preencherBanco"
+          >
+            PREENCHER BANCO
+          </UButton>
+          <UBadge color="neutral" variant="soft">
+            {{ bandejas.time1.length + bandejas.time2.length + bandejas.time3.length }}
+          </UBadge>
+        </div>
       </div>
 
       <div class="overflow-x-auto pb-2">
