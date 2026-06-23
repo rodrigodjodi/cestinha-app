@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useScreenOrientation } from '@vueuse/core'
 import type { LadoEquipe } from '~/schemas/equipe.schema'
+import { calcularPlacarAteTempo } from '~/utils/calcularPlacarAteTempo'
 
 type YoutubePlayerExposed = {
   getTempoAtualMs: () => Promise<number>
@@ -22,7 +23,10 @@ type EscolhaAnotacaoJogada = {
 const orientation = useScreenOrientation()
 const jogoStore = useJogoStore()
 const toast = useToast()
-const { calcularTempoJogoMs } = useVideoAnotacao()
+const {
+  tempoVideoMs,
+  calcularTempoJogoMs,
+} = useVideoAnotacao()
 const {
   jogo,
   equipeEsquerda,
@@ -35,6 +39,14 @@ const youtubePlayer = ref<YoutubePlayerExposed | null>(null)
 const anotacaoPendente = ref<AnotacaoPendente | null>(null)
 const modalAnotacaoAberto = ref(false)
 const enviandoAnotacao = ref(false)
+const jogoId = computed(() => jogo.value?.id)
+const { jogadas } = useListaJogadasJogo(jogoId)
+const tempoJogoAtualMs = computed(() =>
+  Math.round(calcularTempoJogoMs(tempoVideoMs.value, offsetMs.value))
+)
+const placarNoTempoAtual = computed(() =>
+  calcularPlacarAteTempo(jogadas.value, tempoJogoAtualMs.value)
+)
 
 const isLandscape = computed(() =>
   orientation.orientation.value?.includes('landscape')
@@ -143,6 +155,16 @@ function limparAnotacaoPendente() {
     }"
   >
     <section class="video-zone">
+      <div class="mb-2 flex items-center justify-center gap-4 rounded-lg border border-default bg-default px-4 py-2">
+        <span class="text-sm font-medium text-primary">Esquerda</span>
+        <span class="text-2xl font-bold tabular-nums text-highlighted">
+          {{ placarNoTempoAtual.esquerda }}
+          <span class="px-1 text-muted">×</span>
+          {{ placarNoTempoAtual.direita }}
+        </span>
+        <span class="text-sm font-medium text-error">Direita</span>
+      </div>
+
       <div v-if="youtubeId" class="aspect-video max-h-[75vh]">
         <YoutubePlayer
           ref="youtubePlayer"
