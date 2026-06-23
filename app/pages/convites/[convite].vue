@@ -1,96 +1,155 @@
 <script setup lang="ts">
-import {associarJogadorAUsuario} from "@/firebase/jogador.service"
-import type { Jogador } from '~/schemas/jogador.schema';
-// middleware
-definePageMeta({ middleware: ['auth'] })
-const route = useRoute()
-const conviteId = route.params.convite as string
+import type { FetchError } from 'ofetch'
+import type {
+  AssociarJogadorConviteResponse,
+} from '~/schemas/convite.schema'
+import type { Jogador } from '~/schemas/jogador.schema'
+import { apiFetch } from '~/services/apiFetch'
 
-const { grupo, pending, error, notFound } = useValidacaoConvite(conviteId)
-// se o usuário já tem jogador, encaminha direto para o grupo
-const {jogadorLogado} = useJogadorLogado(() => grupo.value?.id)
-watchEffect(() => {
-  if(jogadorLogado.value) {
-    navigateTo(`/grupos/${grupo.value?.id}`)
-  }
+definePageMeta({ middleware: ['auth'] })
+
+const route = useRoute()
+const conviteId = computed(() => {
+  const codigo = route.params.convite
+  return typeof codigo === 'string' ? codigo : undefined
 })
-const { jogadores } =  useListaJogadores(() => grupo.value?.id)
+const {
+  grupo,
+  grupoId,
+  pending,
+  error,
+  notFound,
+} = useValidacaoConvite(conviteId)
+const { jogadorLogado } = useJogadorLogado(grupoId)
+const { jogadores } = useListaJogadores(grupoId)
 const user = useCurrentUser()
-const jogadoresOrdenados = computed(() => {
-  if(!jogadores.value) return []
-  // primeiro admins, depois membros, depois avulsos, alfabético dentro desses grupos
-  return [...jogadores.value].sort((a, b) => {
-    const ordemA = a.atribuicao === 'admin' ? 0 : a.atribuicao === 'membro' ? 1 : 2;
-    const ordemB = b.atribuicao === 'admin' ? 0 : b.atribuicao === 'membro' ? 1 : 2;
-    if (ordemA !== ordemB) {
-      return ordemA - ordemB;
-    }
-    return a.nome.localeCompare(b.nome)
-  }).filter(el=>el.usuarioId === null);
+const toast = useToast()
+const jogadorSelecionadoId = ref<string | null>(null)
+const associando = ref(false)
+
+const jogadoresDisponiveis = computed(() => {
+  return jogadores.value
+    .filter(jogador => jogador.usuarioId === null)
+    .toSorted((a, b) => {
+      const ordem = { admin: 0, membro: 1, avulso: 2 }
+      return ordem[a.atribuicao] - ordem[b.atribuicao]
+        || a.nome.localeCompare(b.nome)
+    })
 })
-const jogadorSelecionado = ref<Jogador | null>(null)
-function selecionarJogador(ev) {
-  console.log('jogador selecionado', ev)
-  jogadorSelecionado.value = ev;
+const jogadorSelecionado = computed(() => {
+  return jogadoresDisponiveis.value.find(
+    jogador => jogador.id === jogadorSelecionadoId.value
+  ) ?? null
+})
+const podeAssociar = computed(() => {
+  return !!user.value
+    && !!grupo.value
+    && !!jogadorSelecionado.value
+    && !associando.value
+})
+
+watch(jogadorLogado, jogador => {
+  if (jogador && grupoId.value && !associando.value) {
+    void navigateTo(`/grupos/${grupoId.value}`)
+  }
+}, { immediate: true })
+
+function selecionarJogador(jogador: Jogador) {
+  jogadorSelecionadoId.value = jogador.id
 }
-function associarJogador() {
-  //console.log('atribuir jogador', jogadorSelecionado.value?.nome , 'para usuario', user.value?.email, 'no grupo', grupo.value?.nome)
-  associarJogadorAUsuario(jogadorSelecionado.value, user.value.uid).then(()=>{
-    console.log('jogador associado, redirecionando...')
-  }).catch(err=> {
-    console.error.err
-  })
+
+function mensagemErro(error: unknown) {
+  const fetchError = error as FetchError<{ message?: string }>
+  return fetchError.data?.message
+    ?? 'Não foi possível associar o jogador. Tente novamente.'
+}
+
+async function associarJogador() {
+  const jogador = jogadorSelecionado.value
+  const grupoAtual = grupo.value
+
+  if (!user.value || !jogador || !grupoAtual || !conviteId.value) return
+
+  associando.value = true
+  try {
+    await apiFetch<AssociarJogadorConviteResponse>(
+      `/api/convites/${encodeURIComponent(conviteId.value)}/associar-jogador`,
+      {
+        method: 'POST',
+        body: { jogadorId: jogador.id },
+      }
+    )
+    toast.add({
+      title: 'Jogador associado',
+      description: `Agora você faz parte do grupo ${grupoAtual.nome}.`,
+      color: 'success',
+    })
+    await navigateTo(`/grupos/${grupoAtual.id}`)
+  } catch (error) {
+    toast.add({
+      title: 'Não foi possível entrar no grupo',
+      description: mensagemErro(error),
+      color: 'error',
+    })
+  } finally {
+    associando.value = false
+  }
 }
 </script>
 
 <template>
   <div v-if="pending">
     <div class="grid gap-4 md:grid-cols-2">
-      <USkeleton class="h-24 mb-3" v-for="i in 2" :key="i" />
+      <USkeleton v-for="i in 2" :key="i" class="mb-3 h-24" />
     </div>
   </div>
 
-  <div v-else-if="error">
-    <UCard>
-      <p class="text-gray-500">
-        Ocorreu um erro ao validar o convite. Tente novamente mais tarde.
-      </p>
-        <pre>{{ error }}</pre>
-    </UCard>
-  </div>
-  <div v-else-if="notFound">
-    <UCard>
-      <p class="text-gray-500">
-        Convite inválido ou expirado.
-      </p>
-    </UCard>
-  </div>
-  <div v-else>
-    <UCard :title="`Bem vindo ao grupo ${grupo?.nome}!`" description="Quem é você?"
-      :header="grupo?.nome">
+  <UCard v-else-if="error">
+    <p class="text-muted">
+      Ocorreu um erro ao validar o convite. Tente novamente mais tarde.
+    </p>
+  </UCard>
 
-      <p class="mb-4 text-dimmed">Selecione um jogador para assumir como identidade no grupo {{ grupo?.nome }}. Se você ainda não tem um
-        jogador, peça para o admin do grupo criar um para você.</p>
-        <div class="flex flex-wrap gap-2">
-      <ItemJogadorSelecao v-for="jogador in jogadoresOrdenados" :key="jogador.id" :jogador="jogador"
-        @toggle="selecionarJogador(jogador)" :data-jogador-id="jogador.id"
+  <UCard v-else-if="notFound">
+    <p class="text-muted">
+      Convite inválido ou expirado.
+    </p>
+  </UCard>
+
+  <UCard
+    v-else-if="grupo"
+    :title="`Bem-vindo ao grupo ${grupo.nome}!`"
+    description="Quem é você?"
+  >
+    <p class="mb-4 text-muted">
+      Selecione um jogador para assumir como identidade no grupo.
+      Se você ainda não tem um jogador, peça para o administrador do grupo
+      criar um.
+    </p>
+
+    <div v-if="jogadoresDisponiveis.length" class="flex flex-wrap gap-2">
+      <ItemJogadorSelecao
+        v-for="jogador in jogadoresDisponiveis"
+        :key="jogador.id"
+        :jogador="jogador"
+        :selected="jogadorSelecionadoId === jogador.id"
+        :data-jogador-id="jogador.id"
         :subtitulo="jogador.atribuicao"
+        @toggle="selecionarJogador(jogador)"
       />
-      
     </div>
+    <p v-else class="text-muted">
+      Não há jogadores disponíveis para associação neste grupo.
+    </p>
+
     <template #footer>
-      <UButton :disabled="!jogadorSelecionado" @click="associarJogador">
+      <UButton
+        :disabled="!podeAssociar"
+        :loading="associando"
+        @click="associarJogador"
+      >
         Selecionar jogador
       </UButton>
     </template>
-    </UCard>
-  </div>
-  <!-- <p>se não tem usuario, encaminha para a tela de login / signup com redirect</p>
-    <p>se tem usuário, verifica existe grupo com esse convite</p>
-    <p>se convite NAO for válido, encerra com aviso ao usuário</p>
-    <p>se convite válido, verifica se tem jogador no grupo</p>
-    <p>se já tiver jogador, redireciona para o grupo</p>
-    <p>se não tiver jogador, mostra a lista de jogadores do grupo pro usuário reclamar</p>
-    <p>ao reclamar um jogador,o usuário é adicionado ao grupo, o doc do jogador é atualizado e é direcionado para o
-        grupo</p> -->
+  </UCard>
 </template>
