@@ -11,6 +11,7 @@ const props = defineProps<{
   diaId: string
   jogadores: Jogador[]
   presencas: Presenca[]
+  podeEditar: boolean
 }>()
 const toast = useToast()
 const db = useFirestore()
@@ -61,10 +62,12 @@ watch(
   sincronizarListas,
   { immediate: true, deep: true }
 )
-const podeEditar = computed(() =>
-  props.dia.status !== '2.concluido'
+const podeEditarTimes = computed(() =>
+  props.podeEditar && props.dia.status !== '2.concluido'
 )
 function persistirTimes() {
+  if (!podeEditarTimes.value) return
+
   clearTimeout(temporizadorSalvamento)
   temporizadorSalvamento = setTimeout(() => {
     const times = {
@@ -126,12 +129,12 @@ const grupoDrag = {
             </div>
           </template>
 
-          <VueDraggableNext
+            <VueDraggableNext
             v-model="listasTimes[time.id]"
             :group="grupoDrag"
             item-key="id"
             class="flex min-h-36 flex-col gap-2"
-            :disabled="!podeEditar"
+            :disabled="!podeEditarTimes"
             @change="persistirTimes"
           >
             <ItemJogadorSelecao
@@ -157,7 +160,7 @@ const grupoDrag = {
         :group="grupoDrag"
         item-key="id"
         :sort="false"
-        :disabled="!podeEditar"
+        :disabled="!podeEditarTimes"
         class="flex min-h-24 flex-wrap content-start gap-2 rounded-md border border-dashed border-default p-3"
         @change="persistirTimes"
       >

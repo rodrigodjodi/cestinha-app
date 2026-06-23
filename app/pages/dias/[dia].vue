@@ -28,6 +28,9 @@ const { jogadores } = useListaJogadores(grupoId)
 const jogadorLogado = computed(() => {
   return jogadores.value.find(el => el.usuarioId === user.value?.uid)
 })
+const podeEditarTimes = computed(() =>
+  jogadorLogado.value?.atribuicao === 'admin'
+)
 const tabItems = [
   { label: 'Presenças', slot: 'presencas' },
   { label: 'Escalação', slot: 'escalacao' },
@@ -66,6 +69,7 @@ const tabItems = [
         :diaId="diaId"
         :jogadores="jogadores"
         :presencas="presencas"
+        :podeEditar="podeEditarTimes"
       />
     </template>
 

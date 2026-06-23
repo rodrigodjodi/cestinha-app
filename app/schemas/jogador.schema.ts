@@ -22,7 +22,7 @@ export const baseJogadorSchema = objetoBaseJogadorSchema.transform(data => ({
 export const criarJogadorInputSchema = z.object({
   nome: z.string("O nome é obrigatório").min(2, "O nome deve ter pelo menos 2 caracteres"),
   grupoId: z.string().min(1),
-  atribuicao: atribuicaoJogadorSchema,
+  atribuicao: atribuicaoJogadorSchema.exclude(['admin']),
 }).strict()
 
 export const alterarAtribuicaoJogadorInputSchema = z.object({

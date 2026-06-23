@@ -31,6 +31,7 @@ export default defineEventHandler(async (event) => {
   batch.set(grupoRef, {
     nome: payloadGrupo.nome,
     usuarios: [user.uid],
+    adminUids: [user.uid],
     criadoPor: user.uid,
     criadoEm: now,
   })

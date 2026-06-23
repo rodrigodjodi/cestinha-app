@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore'
 import {
   alterarAtribuicaoJogadorInputSchema,
   jogadorSchema,
@@ -86,7 +87,25 @@ export default defineEventHandler(async event => {
       })
     }
 
+    if (atribuicao === 'admin' && !jogador.usuarioId) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'jogador-nao-associado',
+        message: 'Associe o jogador a um usuÃ¡rio antes de tornÃ¡-lo administrador.',
+      })
+    }
+
     transaction.update(jogadorRef, { atribuicao })
+
+    if (jogador.usuarioId) {
+      const grupoRef = adminDb.collection('grupos').doc(jogador.grupoId)
+
+      transaction.update(grupoRef, {
+        adminUids: atribuicao === 'admin'
+          ? FieldValue.arrayUnion(jogador.usuarioId)
+          : FieldValue.arrayRemove(jogador.usuarioId),
+      })
+    }
 
     const response: AlterarAtribuicaoJogadorResponse = {
       jogadorId,

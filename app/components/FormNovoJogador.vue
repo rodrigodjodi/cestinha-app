@@ -40,15 +40,10 @@ function handleFormError(event: FormErrorEvent) {
   console.error(event.errors)
 }
 
-const items = computed(() => [
-  {
-    label: 'Admin',
-    value: 'admin',
-    disabled: props.jogadorLogado.atribuicao !== 'admin',
-  },
-  { label: 'Membro', value: 'membro', disabled: false },
-  { label: 'Avulso', value: 'avulso', disabled: false },
-])
+const items = [
+  { label: 'Membro', value: 'membro' },
+  { label: 'Avulso', value: 'avulso' },
+]
 </script>
 
 <template>
@@ -66,6 +61,6 @@ const items = computed(() => [
         class="disabled:opacity-40 ml-3" />
     </UFormField>
     <URadioGroup v-model="criacaoJogadorFormState.atribuicao" class="mt-2"
-      orientation="horizontal" variant="list"  :items="items" />
+      orientation="horizontal" variant="list" :items="items" />
   </UForm>
 </template>

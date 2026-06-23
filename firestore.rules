@@ -1,15 +1,29 @@
 rules_version = '2';
-function isAnotador() {
-  return request.auth.uid == resource.data.anotadorId;
-}
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAnotador() {
+      return request.auth != null && request.auth.uid == resource.data.anotadorId;
+    }
+    function grupoDoc(grupoId) {
+      return get(/databases/$(database)/documents/grupos/$(grupoId));
+    }
+    function isAdminDoGrupo(grupoId) {
+      return request.auth != null
+        && request.auth.uid in grupoDoc(grupoId).data.adminUids;
+    }
+    function alteraApenasTimes() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(['times']);
+    }
+
     match /convites/{convite} {
       allow get:if request.auth != null;
       allow list: if false;
     }
     match /dias/{dia} {
       allow read: if request.auth != null;
+      allow update: if isAdminDoGrupo(resource.data.grupoId)
+        && request.resource.data.grupoId == resource.data.grupoId
+        && alteraApenasTimes();
     }
     match /grupos/{grupo} {
       allow read: if request.auth.uid in resource.data.usuarios;

@@ -59,14 +59,6 @@ export default defineEventHandler(async (event) => {
         message: 'Avulsos não podem criar jogadores.',
       })
     }
-    if (input.atribuicao === 'admin' && criador.atribuicao !== 'admin') {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'nao-autorizado',
-        message: 'Somente administradores podem criar outro administrador.',
-      })
-    }
-
     const payload = baseJogadorSchema.parse({
       ...input,
       usuarioId: null,
