@@ -10,10 +10,17 @@ export const grupoSchema = baseGrupoSchema.extend({
 })
 export const criacaoGrupoSchema = baseGrupoSchema.extend({
   apelido: z.string('O apelido é obrigatório').min(2, 'O apelido deve ter pelo menos 2 caracteres'),
-})
+}).strict()
+
 // usado para validar o formulário
 export type FormCriacaoGrupo = z.input<typeof criacaoGrupoSchema>
 // usado para validar o payload do request
 export type BaseCriacaoGrupo = z.input<typeof baseGrupoSchema>
 // valida o que vem do banco
 export type Grupo = z.output<typeof grupoSchema>
+
+export type CriarGrupoResponse = {
+  grupoId: string
+  jogadorId: string
+  conviteId: string
+}
