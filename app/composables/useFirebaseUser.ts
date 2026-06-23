@@ -1,5 +1,9 @@
-import type { FormSubmitEvent } from "@nuxt/ui";
-import type { SignupData } from "../schemas/auth.schema";
+import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
+import type {
+  LoginData,
+  RecoverPasswordData,
+  SignupData,
+} from "../schemas/auth.schema";
 import type { AuthError } from "firebase/auth";
 import {
   createUserWithEmailAndPassword,
@@ -25,11 +29,11 @@ export default function () {
     email: "",
     senha: "",
   });
-  const loginFormState = reactive<Partial<SignupData>>({
+  const loginFormState = reactive<Partial<LoginData>>({
     email: "",
     senha: "",
   });
-  const recoverPasswordFormState = reactive<Partial<SignupData>>({
+  const recoverPasswordFormState = reactive<Partial<RecoverPasswordData>>({
     email: "",
   });
 
@@ -77,7 +81,7 @@ export default function () {
     }
   }
   // ENTRAR
-  async function entrar(event: FormSubmitEvent<SignupData>) {
+  async function entrar(event: FormSubmitEvent<LoginData>) {
     serverErrors.value = {};
     if (!auth) {
       toast.add({
@@ -121,11 +125,11 @@ export default function () {
     }
   }
   //erros de validação do formulário
-  function handleFormError(errors: any) {
-    console.error("Erros de validação:", errors);
+  function handleFormError(event: FormErrorEvent) {
+    console.error("Erros de validação:", event.errors);
   }
   // redefinição de senha
-  async function redefinirSenha(event: FormSubmitEvent<SignupData>) {
+  async function redefinirSenha(event: FormSubmitEvent<RecoverPasswordData>) {
     serverErrors.value = {};
     try {
       carregando.value = true;

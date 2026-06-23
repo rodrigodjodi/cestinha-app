@@ -12,4 +12,7 @@ export const loginSchema = z.object({
 export const recoverPasswordSchema = z.object({
   email: z.email('Email inválido'),
 })
+
 export type SignupData = z.output<typeof signupSchema>
+export type LoginData = z.output<typeof loginSchema>
+export type RecoverPasswordData = z.output<typeof recoverPasswordSchema>
