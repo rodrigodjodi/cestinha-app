@@ -24,5 +24,8 @@ service cloud.firestore {
     match /presencas/{presenca} {
       allow read: if request.auth != null;
     }
+    match /jogadas/{jogada} {
+      allow read: if request.auth != null;
+    }
   }
 }
