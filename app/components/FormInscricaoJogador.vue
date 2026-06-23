@@ -67,7 +67,7 @@ function handleFormError(e: FormErrorEvent) {
 <template>
   <UForm @submit="inscreverJogador" :schema="formPresencaSchema" :state="inscricaoFormState" @error="handleFormError">
     <UFormField name="nome" :error="serverErrors.nome" class="w-full">
-      <UInputMenu v-model="inscricaoFormState.nome" ref="nome-input" autocomplete :items="listaNomes"
+      <UInputMenu v-model="inscricaoFormState.nome" ref="nome-input" autocomplete="on" :items="listaNomes"
         :trailing-icon="false" :content="{ hideWhenEmpty: true }" placeholder="Inscrever jogador..."
        />
        <UButton type="submit" icon="i-lucide-check" size="sm"
