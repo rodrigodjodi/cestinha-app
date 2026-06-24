@@ -207,8 +207,8 @@ watch(youtubeId, () => {
     }"
   >
     <section class="video-zone">
-      <div class="mb-2 flex items-center justify-between gap-4 rounded-lg border border-default bg-default px-4 py-2">
-        <div class="flex flex-1 items-center justify-center gap-4">
+      <div class="mb-2 flex items-center justify-center gap-4 rounded-lg border border-default bg-default px-4 py-2">
+        <div class="flex items-center justify-center gap-4">
           <span class="text-sm font-medium text-primary">Esquerda</span>
           <span class="text-2xl font-bold tabular-nums text-highlighted">
             {{ placarNoTempoAtual.esquerda }}
@@ -218,16 +218,6 @@ watch(youtubeId, () => {
           <span class="text-sm font-medium text-error">Direita</span>
         </div>
 
-        <UTooltip text="Alternar velocidade" :kbds="['V']">
-          <UButton
-            size="sm"
-            color="neutral"
-            variant="soft"
-            :label="labelVelocidadeVideo"
-            :disabled="!playerPronto"
-            @click="alternarVelocidadeVideo"
-          />
-        </UTooltip>
       </div>
 
       <div v-if="youtubeId" class="aspect-video max-h-[75vh]">
@@ -250,7 +240,12 @@ watch(youtubeId, () => {
     </section>
 
     <section class="timeline-zone">
-      <Timeline v-if="youtubeId" />
+      <Timeline
+        v-if="youtubeId"
+        :velocidade-label="labelVelocidadeVideo"
+        :velocidade-disabled="!playerPronto"
+        @alternar-velocidade="alternarVelocidadeVideo"
+      />
     </section>
 
     <section class="equipe-esquerda-zone flex flex-col gap-2">
