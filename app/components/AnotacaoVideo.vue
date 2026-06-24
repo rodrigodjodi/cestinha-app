@@ -7,6 +7,10 @@ type YoutubePlayerExposed = {
   getTempoAtualMs: () => Promise<number>
   pausar: () => Promise<void>
   seekToMs: (tempoMs: number) => Promise<void>
+  getPlaybackRate: () => number
+  getAvailablePlaybackRates: () => number[]
+  setPlaybackRate: (rate: number) => void
+  togglePlaybackRate: () => number
 }
 
 type AnotacaoPendente = {
@@ -36,6 +40,8 @@ const {
 } = storeToRefs(jogoStore)
 
 const youtubePlayer = ref<YoutubePlayerExposed | null>(null)
+const playerPronto = ref(false)
+const velocidadeVideo = ref(1)
 const anotacaoPendente = ref<AnotacaoPendente | null>(null)
 const modalAnotacaoAberto = ref(false)
 const enviandoAnotacao = ref(false)
@@ -47,6 +53,7 @@ const tempoJogoAtualMs = computed(() =>
 const placarNoTempoAtual = computed(() =>
   calcularPlacarAteTempo(jogadas.value, tempoJogoAtualMs.value)
 )
+const labelVelocidadeVideo = computed(() => `${velocidadeVideo.value}x`)
 
 const isLandscape = computed(() =>
   orientation.orientation.value?.includes('landscape')
@@ -144,6 +151,51 @@ function limparAnotacaoPendente() {
     anotacaoPendente.value = null
   }
 }
+
+function elementoBloqueiaAtalho(elemento: Element | null) {
+  if (!(elemento instanceof HTMLElement)) return false
+
+  return Boolean(
+    elemento.closest('input, textarea, select, form, [contenteditable="true"], [role="dialog"]')
+  )
+}
+
+function podeExecutarAtalhoVideo(event?: KeyboardEvent) {
+  if (event?.repeat || modalAnotacaoAberto.value) return false
+  if (import.meta.server) return false
+
+  return !elementoBloqueiaAtalho(document.activeElement)
+}
+
+function atualizarVelocidadeVideo(rate: number) {
+  velocidadeVideo.value = rate
+}
+
+function marcarPlayerPronto() {
+  playerPronto.value = true
+  velocidadeVideo.value = youtubePlayer.value?.getPlaybackRate() ?? 1
+}
+
+function alternarVelocidadeVideo() {
+  if (!playerPronto.value) return
+
+  const novaVelocidade = youtubePlayer.value?.togglePlaybackRate()
+  if (typeof novaVelocidade === 'number') {
+    velocidadeVideo.value = novaVelocidade
+  }
+}
+
+defineShortcuts({
+  v: (event?: KeyboardEvent) => {
+    if (!podeExecutarAtalhoVideo(event)) return
+    alternarVelocidadeVideo()
+  },
+})
+
+watch(youtubeId, () => {
+  playerPronto.value = false
+  velocidadeVideo.value = 1
+})
 </script>
 
 <template>
@@ -155,20 +207,35 @@ function limparAnotacaoPendente() {
     }"
   >
     <section class="video-zone">
-      <div class="mb-2 flex items-center justify-center gap-4 rounded-lg border border-default bg-default px-4 py-2">
-        <span class="text-sm font-medium text-primary">Esquerda</span>
-        <span class="text-2xl font-bold tabular-nums text-highlighted">
-          {{ placarNoTempoAtual.esquerda }}
-          <span class="px-1 text-muted">×</span>
-          {{ placarNoTempoAtual.direita }}
-        </span>
-        <span class="text-sm font-medium text-error">Direita</span>
+      <div class="mb-2 flex items-center justify-between gap-4 rounded-lg border border-default bg-default px-4 py-2">
+        <div class="flex flex-1 items-center justify-center gap-4">
+          <span class="text-sm font-medium text-primary">Esquerda</span>
+          <span class="text-2xl font-bold tabular-nums text-highlighted">
+            {{ placarNoTempoAtual.esquerda }}
+            <span class="px-1 text-muted">×</span>
+            {{ placarNoTempoAtual.direita }}
+          </span>
+          <span class="text-sm font-medium text-error">Direita</span>
+        </div>
+
+        <UTooltip text="Alternar velocidade" :kbds="['V']">
+          <UButton
+            size="sm"
+            color="neutral"
+            variant="soft"
+            :label="labelVelocidadeVideo"
+            :disabled="!playerPronto"
+            @click="alternarVelocidadeVideo"
+          />
+        </UTooltip>
       </div>
 
       <div v-if="youtubeId" class="aspect-video max-h-[75vh]">
         <YoutubePlayer
           ref="youtubePlayer"
           :youtube-id="youtubeId"
+          @ready="marcarPlayerPronto"
+          @playback-rate-change="atualizarVelocidadeVideo"
         />
       </div>
       <UAlert
