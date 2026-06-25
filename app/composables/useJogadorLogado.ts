@@ -29,13 +29,9 @@ export function useJogadorLogado(grupoId: MaybeRefOrGetter<string|undefined>) {
         return {doc: doc.raw, erroValidacao: doc.error }
       })
   })
-  
-  const stopWatchErrosParse = watch(errosParseJogador, (erros) => {
-    // console.log(' Erros de conversão:', erros)
-    if (erros.length > 0) {
-      console.warn('Foram encontrados erros de conversão ao carregar o jogador logado:', erros)
-    }
+  const isAdmin = computed(()=>{
+    if (!jogadorLogado.value) return null
+    return jogadorLogado.value.atribuicao === 'admin'
   })
-  onBeforeUnmount(() => {stopWatchErrosParse()})
-  return {jogadorLogado, pending, error, errosParseJogador}
+  return {jogadorLogado, isAdmin, pending, error, errosParseJogador}
 }

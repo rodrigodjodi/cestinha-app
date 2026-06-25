@@ -4,6 +4,7 @@ import type { EquipeJogo } from '@/schemas/equipe.schema'
 import type {
   CriarJogadaInput,
   CriarJogadaResponse,
+  Jogada,
 } from '@/schemas/jogada.schema'
 import { updateDoc, doc, serverTimestamp, increment } from 'firebase/firestore'
 import { apiFetch } from '@/services/apiFetch'
@@ -21,6 +22,7 @@ export const useJogoStore = defineStore('jogo', () => {
   const user = useCurrentUser()
   const jogo = ref<Jogo | null>(null)
   const jogadores = ref<Jogador[]>([])
+  const jogadas = ref<Jogada[]>([])
 
   function setJogo(data: Jogo) {
     jogo.value = data
@@ -28,6 +30,10 @@ export const useJogoStore = defineStore('jogo', () => {
 
   function setJogadores(data: Jogador[]) {
     jogadores.value = data
+  }
+
+  function setJogadas(data: Jogada[]) {
+    jogadas.value = data
   }
 
   const jogadoresMap = computed(() => new Map(
@@ -99,6 +105,7 @@ export const useJogoStore = defineStore('jogo', () => {
   function limparStore() {
     jogo.value = null
     jogadores.value = []
+    jogadas.value = []
   }
 
   function gravarComposicao(composicao: ComposicaoJogo) {
@@ -142,12 +149,14 @@ export const useJogoStore = defineStore('jogo', () => {
   return {
     jogo,
     jogadores,
+    jogadas,
     jogadoresMap,
     equipeEsquerda,
     equipeDireita,
     banco,
     setJogo,
     setJogadores,
+    setJogadas,
     iniciar,
     pausar,
     retomar,

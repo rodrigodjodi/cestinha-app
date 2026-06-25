@@ -43,7 +43,9 @@ export function useListaJogadores(grupoId: MaybeRefOrGetter<string|undefined>) {
     }
   })
   onBeforeUnmount(() => {stopWatchNetworkError();stopWatchErrosParse()}) */
-
-  return {jogadores, pending, error, errosParseJogador}
+  const jogadoresMap = computed(() => new Map(
+    jogadores.value.map(jogador => [jogador.id, jogador])
+  ))
+  return {jogadores, jogadoresMap, pending, error, errosParseJogador}
 
 }

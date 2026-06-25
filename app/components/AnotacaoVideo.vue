@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { useScreenOrientation } from '@vueuse/core'
 import type { LadoEquipe } from '~/schemas/equipe.schema'
+import type { Jogada } from '~/schemas/jogada.schema'
+import type { Jogador } from '~/schemas/jogador.schema'
+import type { Jogo } from '~/schemas/jogo.schema'
 import { calcularPlacarAteTempo } from '~/utils/calcularPlacarAteTempo'
+// tipos
+const props = defineProps<{
+  jogo: Jogo
+  jogadores: Jogador[]
+  jogadas: Jogada[]
+}>()
 
 type YoutubePlayerExposed = {
   getTempoAtualMs: () => Promise<number>
@@ -23,35 +32,58 @@ type EscolhaAnotacaoJogada = {
   tipo: '2PM' | '3PM'
   assistenciaId?: string
 }
-
+// composables
 const orientation = useScreenOrientation()
 const jogoStore = useJogoStore()
 const toast = useToast()
+const user = useCurrentUser()
 const {
   tempoVideoMs,
   calcularTempoJogoMs,
 } = useVideoAnotacao()
-const {
-  jogo,
-  equipeEsquerda,
-  equipeDireita,
-  youtubeId,
-  offsetMs,
-} = storeToRefs(jogoStore)
-
+// estado inicial
 const youtubePlayer = ref<YoutubePlayerExposed | null>(null)
 const playerPronto = ref(false)
 const velocidadeVideo = ref(1)
 const anotacaoPendente = ref<AnotacaoPendente | null>(null)
 const modalAnotacaoAberto = ref(false)
 const enviandoAnotacao = ref(false)
-const jogoId = computed(() => jogo.value?.id)
-const { jogadas } = useListaJogadasJogo(jogoId)
+// estado derivado
+const jogadoresMap = computed(() => new Map(
+  props.jogadores.map(jogador => [jogador.id, jogador])
+))
+const resolverJogadores = (ids: string[]) => ids.flatMap(id => {
+  const jogador = jogadoresMap.value.get(id)
+  return jogador ? [jogador] : []
+})
+const equipeEsquerda = computed(() =>
+  resolverJogadores(props.jogo.equipes.esquerda.jogadores)
+)
+const equipeDireita = computed(() =>
+  resolverJogadores(props.jogo.equipes.direita.jogadores)
+)
+const youtubeId = computed(() => props.jogo.video.youtubeId)
+const offsetMs = computed(() => props.jogo.video.offsetMs ?? 0)
+const temVideo = computed(() => Boolean(youtubeId.value))
+const temJogadas = computed(() => props.jogadas.length > 0)
+const podeAnotar = computed(() =>
+  Boolean(
+    props.jogo.anotadorId
+    && props.jogo.anotadorId === user.value?.uid
+  )
+)
+const podeNavegarNoVideo = computed(() =>
+  temVideo.value && playerPronto.value
+)
+const modoVideo = computed<'revisao' | 'anotacao'>(() =>
+  podeAnotar.value ? 'anotacao' : 'revisao'
+)
+
 const tempoJogoAtualMs = computed(() =>
   Math.round(calcularTempoJogoMs(tempoVideoMs.value, offsetMs.value))
 )
 const placarNoTempoAtual = computed(() =>
-  calcularPlacarAteTempo(jogadas.value, tempoJogoAtualMs.value)
+  calcularPlacarAteTempo(props.jogadas, tempoJogoAtualMs.value)
 )
 const labelVelocidadeVideo = computed(() => `${velocidadeVideo.value}x`)
 
@@ -71,12 +103,12 @@ const candidatosAssistencia = computed(() => {
     jogador => jogador.id !== pendente.jogadorId
   )
 })
-
+// funcoes
 async function iniciarAnotacaoVideo(
   jogadorId: string,
   equipe: LadoEquipe,
 ) {
-  if (!jogo.value || !youtubeId.value || !youtubePlayer.value) {
+  if (!youtubeId.value || !youtubePlayer.value) {
     toast.add({
       title: 'Vídeo indisponível',
       description: 'Carregue o vídeo antes de iniciar uma anotação.',
@@ -239,8 +271,8 @@ watch(youtubeId, () => {
       />
     </section>
 
-    <section class="timeline-zone">
-      <Timeline
+    <section class="controles-video-zone">
+      <ControlesVideo
         v-if="youtubeId"
         :velocidade-label="labelVelocidadeVideo"
         :velocidade-disabled="!playerPronto"
@@ -269,6 +301,12 @@ watch(youtubeId, () => {
         @toggle="iniciarAnotacaoVideo(jogador.id, 'direita')"
       />
     </section>
+    <section class="lista-jogadas">
+      <Timneline />
+    </section>
+    <section class="timeline">
+      <ListaJogadasJogo :jogadas="props.jogadas"/>
+    </section>
   </div>
 
   <ModalAnotacaoJogada
@@ -293,7 +331,7 @@ watch(youtubeId, () => {
   grid-template-rows: 1fr auto;
   grid-template-areas:
     "equipe-esquerda video equipe-direita"
-    "equipe-esquerda timeline equipe-direita";
+    "equipe-esquerda controles equipe-direita";
 }
 
 .anotacao-layout-portrait {
@@ -301,7 +339,7 @@ watch(youtubeId, () => {
   grid-template-rows: auto auto 1fr;
   grid-template-areas:
     "video video"
-    "timeline timeline"
+    "controles controles"
     "equipe-esquerda equipe-direita";
 }
 
@@ -309,8 +347,8 @@ watch(youtubeId, () => {
   grid-area: video;
 }
 
-.timeline-zone {
-  grid-area: timeline;
+.controles-video-zone {
+  grid-area: controles;
 }
 
 .equipe-esquerda-zone {

@@ -4,11 +4,13 @@ const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
 const route = useRoute()
 const jogoStore = useJogoStore()
 const { jogo } = useJogo(route.params.jogo as string)
+const jogoId = computed(() => jogo.value?.id)
 const grupoId = computed(() => jogo.value?.grupoId)
 const diaId = computed(() => jogo.value?.diaId)
 const { dia } = useDia(diaId)
 const { jogadores } = useListaJogadores(grupoId)
-
+const { jogadas } = useListaJogadasJogo(jogoId)
+const { isAdmin } = useJogadorLogado(grupoId)
 watch(jogo, novoJogo => {
   if (novoJogo) {
     jogoStore.setJogo(novoJogo)
@@ -17,6 +19,11 @@ watch(jogo, novoJogo => {
 watch(jogadores, value => {
   if (value) {
     jogoStore.setJogadores(value)
+  }
+}, { immediate: true })
+watch(jogadas, value => {
+  if (value) {
+    jogoStore.setJogadas(value)
   }
 }, { immediate: true })
 
@@ -53,11 +60,16 @@ onBeforeUnmount(() => { jogoStore.limparStore()})
     <template #video>
       <div class="p-2">
         <FormYoutubeVideo
-          v-if="jogo && !jogo.video.youtubeId"
+          v-if="jogo && !jogo.video.youtubeId && isAdmin"
           :jogo-id="jogo.id"
           :grupo-id="jogo.grupoId"
         />
-        <AnotacaoVideo v-if="jogo" />
+        <AnotacaoVideo
+          v-if="jogo"
+          :jogo="jogo"
+          :jogadores="jogadores"
+          :jogadas="jogadas"
+        />
       </div>
     </template>
     <template #stats>
