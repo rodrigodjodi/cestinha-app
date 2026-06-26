@@ -305,7 +305,7 @@ watch(youtubeId, () => {
       <Timneline />
     </section>
     <section class="timeline">
-      <ListaJogadasJogo :jogadas="props.jogadas"/>
+      <ListaJogadasJogo />
     </section>
   </div>
 

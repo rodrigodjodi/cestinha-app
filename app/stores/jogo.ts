@@ -145,7 +145,7 @@ export const useJogoStore = defineStore('jogo', () => {
       }
     )
   }
-
+  
   return {
     jogo,
     jogadores,
@@ -175,6 +175,6 @@ export const useJogoStore = defineStore('jogo', () => {
     videoThumbUrl: computed(() => jogo.value?.video.thumbUrl),
     atribuirAnotacao,
     definirOffsetMs,
-    anotarJogada,
+    anotarJogada, resolverJogadores
   }
 })
