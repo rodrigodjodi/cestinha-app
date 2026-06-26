@@ -145,6 +145,17 @@ export const useJogoStore = defineStore('jogo', () => {
       }
     )
   }
+
+  function excluirJogada(jogadaId: string) {
+    if (!jogo.value) {
+      throw new Error('Jogo não definido')
+    }
+
+    return apiFetch<{ sucesso: true, jogadaId: string }>(
+      `/api/jogos/${jogo.value.id}/jogadas/${jogadaId}`,
+      { method: 'DELETE' }
+    )
+  }
   
   return {
     jogo,
@@ -175,6 +186,8 @@ export const useJogoStore = defineStore('jogo', () => {
     videoThumbUrl: computed(() => jogo.value?.video.thumbUrl),
     atribuirAnotacao,
     definirOffsetMs,
-    anotarJogada, resolverJogadores
+    anotarJogada,
+    excluirJogada,
+    resolverJogadores,
   }
 })

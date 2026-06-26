@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { beep, multiBeep } from "@/utils/beep"
+import { formatarSegundosPlacar } from "@/utils/formatarTempoPlacar"
 import { useWakeLock } from '@vueuse/core'
 const {request, release} = useWakeLock()
 const jogoStore = useJogoStore()
@@ -64,12 +65,7 @@ const tempoRestante = computed(() => {
  * Display mm:ss
  */
 const tempoFormatado = computed(() => {
-  const minutos = Math.floor(tempoRestante.value / 60)
-  const segundos = tempoRestante.value % 60
-
-  return `${String(minutos).padStart(2, '0')}:${String(
-    segundos
-  ).padStart(2, '0')}`
+  return formatarSegundosPlacar(tempoRestante.value)
 })
 
 /**

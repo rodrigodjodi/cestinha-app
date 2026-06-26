@@ -5,6 +5,7 @@ import type { Jogada } from '~/schemas/jogada.schema'
 import type { Jogador } from '~/schemas/jogador.schema'
 import type { Jogo } from '~/schemas/jogo.schema'
 import { calcularPlacarAteTempo } from '~/utils/calcularPlacarAteTempo'
+import { formatarTempoRestantePlacar } from '~/utils/formatarTempoPlacar'
 // tipos
 const props = defineProps<{
   jogo: Jogo
@@ -84,6 +85,9 @@ const tempoJogoAtualMs = computed(() =>
 )
 const placarNoTempoAtual = computed(() =>
   calcularPlacarAteTempo(props.jogadas, tempoJogoAtualMs.value)
+)
+const tempoRestanteNoTempoAtual = computed(() =>
+  formatarTempoRestantePlacar(props.jogo.timer.duracao, tempoJogoAtualMs.value)
 )
 const labelVelocidadeVideo = computed(() => `${velocidadeVideo.value}x`)
 
@@ -217,6 +221,21 @@ function alternarVelocidadeVideo() {
   }
 }
 
+async function navegarParaTempoJogada(tempoMs: number) {
+  if (!youtubeId.value || !youtubePlayer.value || !playerPronto.value) {
+    toast.add({
+      title: 'Player indisponível',
+      description: 'Aguarde o vídeo carregar para navegar até a jogada.',
+      color: 'warning',
+    })
+    return
+  }
+
+  await youtubePlayer.value.seekToMs(
+    Math.max(0, tempoMs + offsetMs.value - 5000)
+  )
+}
+
 defineShortcuts({
   v: (event?: KeyboardEvent) => {
     if (!podeExecutarAtalhoVideo(event)) return
@@ -248,6 +267,9 @@ watch(youtubeId, () => {
             {{ placarNoTempoAtual.direita }}
           </span>
           <span class="text-sm font-medium text-error">Direita</span>
+          <span class="text-sm font-semibold tabular-nums text-muted">
+            {{ tempoRestanteNoTempoAtual }}
+          </span>
         </div>
 
       </div>
@@ -305,7 +327,7 @@ watch(youtubeId, () => {
       <Timneline />
     </section>
     <section class="timeline">
-      <ListaJogadasJogo />
+      <ListaJogadasJogo @selecionar-tempo="navegarParaTempoJogada" />
     </section>
   </div>
 
