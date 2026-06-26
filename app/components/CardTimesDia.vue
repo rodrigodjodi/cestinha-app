@@ -12,6 +12,7 @@ const props = defineProps<{
   jogadores: Jogador[]
   presencas: Presenca[]
   podeEditar: boolean
+  edicaoBloqueada: boolean
 }>()
 const toast = useToast()
 const db = useFirestore()
@@ -63,7 +64,7 @@ watch(
   { immediate: true, deep: true }
 )
 const podeEditarTimes = computed(() =>
-  props.podeEditar && props.dia.status !== '2.concluido'
+  props.podeEditar && !props.edicaoBloqueada
 )
 function persistirTimes() {
   if (!podeEditarTimes.value) return

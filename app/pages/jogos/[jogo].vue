@@ -2,6 +2,7 @@
 definePageMeta({ middleware: ['auth'], layout: 'default' })
 const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
 const route = useRoute()
+const router = useRouter()
 const jogoStore = useJogoStore()
 const { jogo } = useJogo(route.params.jogo as string)
 const jogoId = computed(() => jogo.value?.id)
@@ -32,18 +33,62 @@ useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - 
 watchEffect(() => {
   pageTitle.value = jogo.value?.nome ?? 'Carregando...'
 })
+type AbaJogo = 'video' | 'estatisticas' | 'escalacao' | 'ao-vivo'
+const abasJogo: AbaJogo[] = ['video', 'estatisticas', 'escalacao', 'ao-vivo']
 const tabItems = [
-  { label: "Escalação", slot: 'escalacao' },
-  { label: "Ao Vivo", slot: 'live',  },
-  { label: "Video", slot: 'video' },
-  { label: "Estatísticas", slot: 'stats' },
+  { label: "Vídeo", slot: 'video', value: 'video' },
+  { label: "Estatísticas", slot: 'stats', value: 'estatisticas' },
+  { label: "Escalação", slot: 'escalacao', value: 'escalacao' },
+  { label: "Ao vivo", slot: 'live', value: 'ao-vivo' },
 ]
+const abaAtiva = ref<AbaJogo>('escalacao')
+const defaultAbaCalculado = computed<AbaJogo | null>(() => {
+  if (!jogo.value) return null
+  if (jogo.value.video.youtubeId) return 'video'
+  if (jogo.value.timer.status === 'ocioso') return 'escalacao'
+  if (
+    jogo.value.timer.status === 'rodando'
+    || jogo.value.timer.status === 'pausado'
+  ) {
+    return 'ao-vivo'
+  }
+  return 'escalacao'
+})
+
+function validarAbaJogo(value: unknown): AbaJogo | null {
+  return typeof value === 'string' && abasJogo.includes(value as AbaJogo)
+    ? value as AbaJogo
+    : null
+}
+
+const abaQuery = computed(() => validarAbaJogo(route.query.aba))
+const abaResolvida = computed<AbaJogo>(() =>
+  abaQuery.value ?? defaultAbaCalculado.value ?? abaAtiva.value
+)
+
+watch(abaResolvida, value => {
+  if (abaAtiva.value !== value) {
+    abaAtiva.value = value
+  }
+}, { immediate: true })
+
+watch(abaAtiva, value => {
+  if (!defaultAbaCalculado.value && !abaQuery.value) return
+  if (route.query.aba === value) return
+
+  router.replace({
+    query: {
+      ...route.query,
+      aba: value,
+    },
+  })
+})
 onBeforeUnmount(() => { jogoStore.limparStore()})
 </script>
 
 <template>
 
-  <UTabs :items="tabItems" class="flex-1 min-h-0" >
+  <UTabs v-model="abaAtiva" :items="tabItems" class="flex-1 min-h-0" >
     <template #escalacao>
       <CardEscalacao
         v-if="jogo && dia"

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { apiFetch } from '~/services/apiFetch'
-import type { Dia } from '~/schemas/dia.schema'
 import type { Jogador } from '~/schemas/jogador.schema'
 import type { Presenca } from '~/schemas/presenca.schema'
 
@@ -9,7 +8,7 @@ const props = defineProps<{
   grupoId: MaybeRefOrGetter<string | undefined>
   jogadorLogado: MaybeRefOrGetter<Jogador | undefined>
   presencas: MaybeRefOrGetter<Presenca[] | undefined>
-  diaStatus: Dia['status']
+  edicaoBloqueada: MaybeRefOrGetter<boolean>
 }>()
 
 const toast = useToast()
@@ -20,7 +19,7 @@ const presencaAtual = computed(() => {
     presenca => presenca.jogadorId === jogadorId
   )
 })
-const diaConcluido = computed(() => props.diaStatus === '2.concluido')
+const edicaoBloqueada = computed(() => toValue(props.edicaoBloqueada))
 
 async function confirmarPresenca() {
   const grupoId = toValue(props.grupoId)
@@ -86,7 +85,7 @@ async function cancelarPresenca() {
 <template>
   <div class="w-full rounded-2xl border-2 border-accented bg-muted p-4">
     <UButton
-      v-if="!presencaAtual && !diaConcluido"
+      v-if="!presencaAtual && !edicaoBloqueada"
       size="lg"
       class="w-full py-8"
       variant="subtle"
@@ -103,7 +102,7 @@ async function cancelarPresenca() {
     >
       <h2 class="text-center">PRESENÇA CONFIRMADA</h2>
       <UButton
-        v-if="!diaConcluido"
+        v-if="!edicaoBloqueada"
         class="mt-4 w-full"
         color="error"
         variant="soft"
@@ -121,7 +120,7 @@ async function cancelarPresenca() {
     >
       <h2 class="text-center">VOCÊ ESTÁ NA ESPERA</h2>
       <UButton
-        v-if="!diaConcluido"
+        v-if="!edicaoBloqueada"
         class="mt-4 w-full"
         color="error"
         variant="soft"

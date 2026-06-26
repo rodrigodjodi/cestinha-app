@@ -39,6 +39,10 @@ export default defineEventHandler(async event => {
     const diaRef = adminDb.doc(`dias/${diaId}`)
     const jogadorRef = adminDb.doc(`jogadores/${jogadorId}`)
     const presencaRef = adminDb.doc(`presencas/${diaId}_${jogadorId}`)
+    const jogosDiaQuery = adminDb.collection('jogos')
+      .where('grupoId', '==', grupoId)
+      .where('diaId', '==', diaId)
+      .limit(1)
     const adminQuery = adminDb.collection('jogadores')
       .where('grupoId', '==', grupoId)
       .where('usuarioId', '==', decodedToken.uid)
@@ -47,6 +51,7 @@ export default defineEventHandler(async event => {
     const diaSnapshot = await transaction.get(diaRef)
     const jogadorSnapshot = await transaction.get(jogadorRef)
     const presencaSnapshot = await transaction.get(presencaRef)
+    const jogosDiaSnapshot = await transaction.get(jogosDiaQuery)
     const adminSnapshot = await transaction.get(adminQuery)
 
     if (!diaSnapshot.exists) {
@@ -92,10 +97,10 @@ export default defineEventHandler(async event => {
         message: 'Somente admin pode alterar a situação de outro jogador.',
       })
     }
-    if (dia.status === '2.concluido') {
+    if (!jogosDiaSnapshot.empty) {
       throw createError({
         statusCode: 409,
-        statusMessage: 'dia-concluido',
+        statusMessage: 'dia-com-jogos',
       })
     }
 

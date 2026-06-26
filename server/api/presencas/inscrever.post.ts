@@ -26,13 +26,27 @@ export default defineEventHandler(async (event) => {
   }
 
   const payload = validacao.data
+  const diaRef = adminDb.doc(`dias/${payload.diaId}`)
   const jogadorRef = adminDb.doc(`jogadores/${payload.jogadorId}`)
   const presencaRef = adminDb.doc(
     `presencas/${payload.diaId}_${payload.jogadorId}`
   )
+  const jogosDiaQuery = adminDb.collection('jogos')
+    .where('grupoId', '==', payload.grupoId)
+    .where('diaId', '==', payload.diaId)
+    .limit(1)
 
   await adminDb.runTransaction(async transaction => {
+    const diaSnapshot = await transaction.get(diaRef)
     const jogadorSnapshot = await transaction.get(jogadorRef)
+    const jogosDiaSnapshot = await transaction.get(jogosDiaQuery)
+    if (!diaSnapshot.exists) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'dia-nao-encontrado',
+        message: 'O dia informado não foi encontrado.',
+      })
+    }
     if (!jogadorSnapshot.exists) {
       throw createError({
         statusCode: 404,
@@ -41,12 +55,19 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    const dia = diaSnapshot.data()!
     const jogador = jogadorSnapshot.data()!
-    if (jogador.grupoId !== payload.grupoId) {
+    if (dia.grupoId !== payload.grupoId || jogador.grupoId !== payload.grupoId) {
       throw createError({
         statusCode: 403,
         statusMessage: 'nao-membro',
         message: 'O jogador não é membro do grupo.',
+      })
+    }
+    if (!jogosDiaSnapshot.empty) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: 'dia-com-jogos',
       })
     }
 

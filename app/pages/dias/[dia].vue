@@ -3,6 +3,7 @@ definePageMeta({ middleware: ['auth'] })
 const pageTitle = useState<string>('pageTitle', () => 'Carregando...')
 useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
 const route = useRoute()
+const router = useRouter()
 const user = useCurrentUser()
 const diaId = route.params.dia as string
 const { dia } = useDia(diaId)
@@ -25,24 +26,69 @@ watchEffect(() => {
 // console.log('diaId', diaId, 'grupoId', grupoId)
 const { presencas } = useListaPresencasDiaGrupo(diaId, grupoId)
 const { jogadores } = useListaJogadores(grupoId)
+const {
+  jogos,
+  pending: jogosPending,
+  error: jogosError,
+} = useListaJogosDiasGrupo(diaId, grupoId)
 const jogadorLogado = computed(() => {
   return jogadores.value.find(el => el.usuarioId === user.value?.uid)
 })
 const podeEditarTimes = computed(() =>
   jogadorLogado.value?.atribuicao === 'admin'
 )
+const edicaoDiaBloqueada = computed(() =>
+  jogosPending.value || jogos.value.length > 0
+)
+type AbaDia = 'jogos' | 'estatisticas' | 'presencas' | 'escalacao'
+const abasDia: AbaDia[] = ['jogos', 'estatisticas', 'presencas', 'escalacao']
 const tabItems = [
-  { label: 'Presenças', slot: 'presencas' },
-  { label: 'Escalação', slot: 'escalacao' },
-  { label: 'Jogos', slot: 'jogos' },
-  { label: 'Estatísticas', slot: 'estatisticas' },
+  { label: 'Jogos', slot: 'jogos', value: 'jogos' },
+  { label: 'Estatísticas', slot: 'estatisticas', value: 'estatisticas' },
+  { label: 'Presenças', slot: 'presencas', value: 'presencas' },
+  { label: 'Escalação', slot: 'escalacao', value: 'escalacao' },
 ]
+const abaAtiva = ref<AbaDia>('jogos')
+const defaultAbaCalculado = computed<AbaDia | null>(() => {
+  if (!grupoId.value) return null
+  if (jogosPending.value) return null
+  return jogos.value.length > 0 ? 'jogos' : 'presencas'
+})
+
+function validarAbaDia(value: unknown): AbaDia | null {
+  return typeof value === 'string' && abasDia.includes(value as AbaDia)
+    ? value as AbaDia
+    : null
+}
+
+const abaQuery = computed(() => validarAbaDia(route.query.aba))
+const abaResolvida = computed<AbaDia>(() =>
+  abaQuery.value ?? defaultAbaCalculado.value ?? abaAtiva.value
+)
+
+watch(abaResolvida, value => {
+  if (abaAtiva.value !== value) {
+    abaAtiva.value = value
+  }
+}, { immediate: true })
+
+watch(abaAtiva, value => {
+  if (!defaultAbaCalculado.value && !abaQuery.value) return
+  if (route.query.aba === value) return
+
+  router.replace({
+    query: {
+      ...route.query,
+      aba: value,
+    },
+  })
+})
 
 </script>
 <template>
   
 
-  <UTabs :items="tabItems" class="mt-4 flex-1 min-h-0">
+  <UTabs v-model="abaAtiva" :items="tabItems" class="mt-4 flex-1 min-h-0">
     <template #presencas>
       <BotaoConfirmacao
         v-if="dia"
@@ -50,7 +96,7 @@ const tabItems = [
         :grupoId="grupoId"
         :presencas="presencas"
         :jogadorLogado="jogadorLogado"
-        :diaStatus="dia.status"
+        :edicao-bloqueada="edicaoDiaBloqueada"
       />
       <CardPresencas
         :jogadores="jogadores"
@@ -58,7 +104,7 @@ const tabItems = [
         :jogadorLogado="jogadorLogado"
         :diaId="diaId"
         :grupoId="grupoId"
-        :diaStatus="dia?.status ?? '2.concluido'"
+        :edicao-bloqueada="edicaoDiaBloqueada"
       />
     </template>
 
@@ -70,11 +116,18 @@ const tabItems = [
         :jogadores="jogadores"
         :presencas="presencas"
         :podeEditar="podeEditarTimes"
+        :edicao-bloqueada="edicaoDiaBloqueada"
       />
     </template>
 
     <template #jogos>
-      <CardJogos :diaId="diaId" :grupoId="grupoId" />
+      <CardJogos
+        :diaId="diaId"
+        :grupoId="grupoId"
+        :jogos="jogos"
+        :pending="jogosPending"
+        :error="jogosError"
+      />
     </template>
 
     <template #estatisticas>

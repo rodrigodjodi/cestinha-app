@@ -6,16 +6,11 @@ import { apagarJogo } from '~/services/apagarJogo'
 const props = defineProps<{
   diaId: string
   grupoId: string | undefined
+  jogos: Jogo[]
+  pending: boolean
+  error: unknown
 }>()
 const user = useCurrentUser()
-const {
-  jogos,
-  pending,
-  error,
-} = useListaJogosDiasGrupo(
-  () => props.diaId,
-  () => props.grupoId
-)
 const anotadorModel = ref(true)
 const anotadorJogo = computed(() =>
   anotadorModel.value ? user.value?.uid ?? null : null
@@ -35,7 +30,7 @@ function formatarHorario(timestamp: { toDate: () => Date } | null) {
   return timestamp ? formatadorHorario.format(timestamp.toDate()) : null
 }
 
-function intervaloJogo(jogo: (typeof jogos.value)[number]) {
+function intervaloJogo(jogo: Jogo) {
   const inicio = formatarHorario(jogo.timer.iniciadoEm)
   const fim = formatarHorario(jogo.timer.finalizadoEm)
 
@@ -44,7 +39,7 @@ function intervaloJogo(jogo: (typeof jogos.value)[number]) {
   return `${inicio} – ${fim}`
 }
 
-function textoStatus(status: (typeof jogos.value)[number]['timer']['status']) {
+function textoStatus(status: Jogo['timer']['status']) {
   switch (status) {
     case 'rodando':
       return 'Jogo em andamento'

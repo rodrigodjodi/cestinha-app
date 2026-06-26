@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { apiFetch } from '~/services/apiFetch'
-import type { Dia } from '~/schemas/dia.schema'
 import type { Jogador } from '~/schemas/jogador.schema'
 import type { Presenca, SituacaoPresenca } from '~/schemas/presenca.schema'
 
@@ -10,7 +9,7 @@ const props = defineProps<{
   jogadorLogado: Jogador | undefined
   diaId: string
   grupoId: string | undefined
-  diaStatus: Dia['status']
+  edicaoBloqueada: boolean
 }>()
 
 type ItemJogadorLista = {
@@ -25,7 +24,7 @@ const modalAberto = ref(false)
 const itemSelecionado = ref<ItemJogadorLista>()
 const carregando = ref(false)
 const ehAdmin = computed(() => props.jogadorLogado?.atribuicao === 'admin')
-const diaConcluido = computed(() => props.diaStatus === '2.concluido')
+const edicaoBloqueada = computed(() => props.edicaoBloqueada)
 const jogadoresMap = computed(() => new Map(
   props.jogadores.map(jogador => [jogador.id, jogador])
 ))
@@ -63,7 +62,7 @@ function formatarHorario(timestamp: Presenca['situacaoEm']) {
 }
 
 function abrirAcoes(item: ItemJogadorLista) {
-  if (!ehAdmin.value || diaConcluido.value) return
+  if (!ehAdmin.value || props.edicaoBloqueada) return
   itemSelecionado.value = item
   modalAberto.value = true
 }
@@ -143,7 +142,7 @@ async function retirarJogador() {
     </div>
 
     <FormInscricaoJogador
-      v-if="ehAdmin && !diaConcluido"
+      v-if="ehAdmin && !edicaoBloqueada"
       :dia-id="diaId"
       :grupo-id="grupoId"
       :jogadores="jogadores"
@@ -164,7 +163,7 @@ async function retirarJogador() {
           <button
             type="button"
             class="flex w-full items-center justify-between gap-4 rounded-md py-2 text-left"
-            :class="ehAdmin && !diaConcluido ? 'cursor-pointer active:bg-elevated' : 'cursor-default'"
+            :class="ehAdmin && !edicaoBloqueada ? 'cursor-pointer active:bg-elevated' : 'cursor-default'"
             @click="abrirAcoes(item)"
           >
             <span class="min-w-0 truncate">{{ item.nome }}</span>
@@ -190,7 +189,7 @@ async function retirarJogador() {
           <button
             type="button"
             class="flex w-full items-center justify-between gap-4 rounded-md py-2 text-left"
-            :class="ehAdmin && !diaConcluido ? 'cursor-pointer active:bg-elevated' : 'cursor-default'"
+            :class="ehAdmin && !edicaoBloqueada ? 'cursor-pointer active:bg-elevated' : 'cursor-default'"
             @click="abrirAcoes(item)"
           >
             <span class="min-w-0 truncate">{{ item.nome }}</span>
