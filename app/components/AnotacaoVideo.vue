@@ -221,7 +221,7 @@ function alternarVelocidadeVideo() {
   }
 }
 
-async function navegarParaTempoJogada(tempoMs: number) {
+async function navegarParaTempoVideo(tempoMs: number, antecipacaoMs = 0) {
   if (!youtubeId.value || !youtubePlayer.value || !playerPronto.value) {
     toast.add({
       title: 'Player indisponível',
@@ -232,8 +232,12 @@ async function navegarParaTempoJogada(tempoMs: number) {
   }
 
   await youtubePlayer.value.seekToMs(
-    Math.max(0, tempoMs + offsetMs.value - 5000)
+    Math.max(0, tempoMs + offsetMs.value - antecipacaoMs)
   )
+}
+
+function navegarParaTempoJogada(tempoMs: number) {
+  return navegarParaTempoVideo(tempoMs, 5000)
 }
 
 defineShortcuts({
@@ -299,6 +303,7 @@ watch(youtubeId, () => {
         :velocidade-label="labelVelocidadeVideo"
         :velocidade-disabled="!playerPronto"
         @alternar-velocidade="alternarVelocidadeVideo"
+        @selecionar-tempo="navegarParaTempoVideo"
       />
     </section>
 
@@ -322,9 +327,6 @@ watch(youtubeId, () => {
         :selected="jogador.id === anotacaoPendente?.jogadorId"
         @toggle="iniciarAnotacaoVideo(jogador.id, 'direita')"
       />
-    </section>
-    <section class="lista-jogadas">
-      <Timneline />
     </section>
     <section class="timeline">
       <ListaJogadasJogo @selecionar-tempo="navegarParaTempoJogada" />
@@ -350,19 +352,21 @@ watch(youtubeId, () => {
 
 .anotacao-layout-landscape {
   grid-template-columns: 140px 1fr 140px;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: 1fr auto minmax(0, 12rem);
   grid-template-areas:
     "equipe-esquerda video equipe-direita"
-    "equipe-esquerda controles equipe-direita";
+    "equipe-esquerda controles equipe-direita"
+    "equipe-esquerda timeline equipe-direita";
 }
 
 .anotacao-layout-portrait {
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto minmax(0, 12rem);
   grid-template-areas:
     "video video"
     "controles controles"
-    "equipe-esquerda equipe-direita";
+    "equipe-esquerda equipe-direita"
+    "timeline timeline";
 }
 
 .video-zone {
@@ -379,5 +383,11 @@ watch(youtubeId, () => {
 
 .equipe-direita-zone {
   grid-area: equipe-direita;
+}
+
+.timeline {
+  grid-area: timeline;
+  min-height: 0;
+  overflow: auto;
 }
 </style>
