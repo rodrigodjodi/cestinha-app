@@ -103,7 +103,7 @@ onBeforeUnmount(() => { jogoStore.limparStore()})
       </div>
     </template>
     <template #video>
-      <div class="p-2">
+      <div class="h-[calc(100dvh-var(--ui-header-height)-3.25rem)] min-h-0 p-2">
         <FormYoutubeVideo
           v-if="jogo && !jogo.video.youtubeId && isAdmin"
           :jogo-id="jogo.id"

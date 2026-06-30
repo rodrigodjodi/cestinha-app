@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useScreenOrientation } from '@vueuse/core'
 import type { LadoEquipe } from '~/schemas/equipe.schema'
 import type { Jogada } from '~/schemas/jogada.schema'
 import type { Jogador } from '~/schemas/jogador.schema'
@@ -34,7 +33,6 @@ type EscolhaAnotacaoJogada = {
   assistenciaId?: string
 }
 // composables
-const orientation = useScreenOrientation()
 const jogoStore = useJogoStore()
 const toast = useToast()
 const user = useCurrentUser()
@@ -90,10 +88,6 @@ const tempoRestanteNoTempoAtual = computed(() =>
   formatarTempoRestantePlacar(props.jogo.timer.duracao, tempoJogoAtualMs.value)
 )
 const labelVelocidadeVideo = computed(() => `${velocidadeVideo.value}x`)
-
-const isLandscape = computed(() =>
-  orientation.orientation.value?.includes('landscape')
-)
 
 const candidatosAssistencia = computed(() => {
   const pendente = anotacaoPendente.value
@@ -254,15 +248,9 @@ watch(youtubeId, () => {
 </script>
 
 <template>
-  <div
-    class="anotacao-layout"
-    :class="{
-      'anotacao-layout-landscape': isLandscape,
-      'anotacao-layout-portrait': !isLandscape,
-    }"
-  >
-    <section class="video-zone">
-      <div class="mb-2 flex items-center justify-center gap-4 rounded-lg border border-default bg-default px-4 py-2">
+  <div class="anotacao-layout">
+    <section class="player-zone">
+      <div class="scoreboard-row flex items-center justify-center gap-4 rounded-lg border border-default bg-default px-4 py-2">
         <div class="flex items-center justify-center gap-4">
           <span class="text-sm font-medium text-primary">Esquerda</span>
           <span class="text-2xl font-bold tabular-nums text-highlighted">
@@ -278,7 +266,7 @@ watch(youtubeId, () => {
 
       </div>
 
-      <div v-if="youtubeId" class="aspect-video max-h-[75vh]">
+      <div v-if="youtubeId" class="video-frame">
         <YoutubePlayer
           ref="youtubePlayer"
           :youtube-id="youtubeId"
@@ -295,11 +283,9 @@ watch(youtubeId, () => {
         title="Nenhum vídeo anexado"
         description="As equipes continuam disponíveis, mas a anotação por vídeo exige um vídeo."
       />
-    </section>
-
-    <section class="controles-video-zone">
       <ControlesVideo
         v-if="youtubeId"
+        class="timeline-row"
         :velocidade-label="labelVelocidadeVideo"
         :velocidade-disabled="!playerPronto"
         @alternar-velocidade="alternarVelocidadeVideo"
@@ -307,28 +293,7 @@ watch(youtubeId, () => {
       />
     </section>
 
-    <section class="equipe-esquerda-zone flex flex-col gap-2">
-      <ItemJogadorSelecao
-        v-for="jogador in equipeEsquerda"
-        :key="jogador.id"
-        :jogador="jogador"
-        :disabled="!youtubeId"
-        :selected="jogador.id === anotacaoPendente?.jogadorId"
-        @toggle="iniciarAnotacaoVideo(jogador.id, 'esquerda')"
-      />
-    </section>
-
-    <section class="equipe-direita-zone flex flex-col gap-2">
-      <ItemJogadorSelecao
-        v-for="jogador in equipeDireita"
-        :key="jogador.id"
-        :jogador="jogador"
-        :disabled="!youtubeId"
-        :selected="jogador.id === anotacaoPendente?.jogadorId"
-        @toggle="iniciarAnotacaoVideo(jogador.id, 'direita')"
-      />
-    </section>
-    <section class="timeline">
+    <section class="jogadas-zone rounded-lg border border-default bg-default">
       <ListaJogadasJogo @selecionar-tempo="navegarParaTempoJogada" />
     </section>
   </div>
@@ -346,48 +311,61 @@ watch(youtubeId, () => {
 <style scoped>
 .anotacao-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(240px, 1fr);
+  gap: 0.75rem;
   height: 100%;
-  gap: 0.5rem;
-}
-
-.anotacao-layout-landscape {
-  grid-template-columns: 140px 1fr 140px;
-  grid-template-rows: 1fr auto minmax(0, 12rem);
-  grid-template-areas:
-    "equipe-esquerda video equipe-direita"
-    "equipe-esquerda controles equipe-direita"
-    "equipe-esquerda timeline equipe-direita";
-}
-
-.anotacao-layout-portrait {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto auto minmax(0, 12rem);
-  grid-template-areas:
-    "video video"
-    "controles controles"
-    "equipe-esquerda equipe-direita"
-    "timeline timeline";
-}
-
-.video-zone {
-  grid-area: video;
-}
-
-.controles-video-zone {
-  grid-area: controles;
-}
-
-.equipe-esquerda-zone {
-  grid-area: equipe-esquerda;
-}
-
-.equipe-direita-zone {
-  grid-area: equipe-direita;
-}
-
-.timeline {
-  grid-area: timeline;
   min-height: 0;
+}
+
+.player-zone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto;
+  gap: 0.5rem;
+  
+  min-width: 0;
+}
+
+.scoreboard-row,
+.timeline-row {
+  width: 100%;
+}
+
+.video-frame {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.jogadas-zone {
+  min-height: 240px;
+  min-width: 0;
   overflow: auto;
+}
+
+@media (min-width: 1024px) {
+  .anotacao-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.48fr);
+    grid-template-rows: minmax(240px, 1fr);
+    align-items: stretch;
+  }
+
+  .player-zone {
+    --player-chrome-height: 9.5rem;
+
+    justify-self: start;
+    width: 100%;
+    max-width: clamp(
+      360px,
+      calc((100dvh - var(--ui-header-height) - 3.25rem - 1rem - var(--player-chrome-height)) * 16 / 9),
+      100%
+    );
+  }
+
+  .jogadas-zone {
+    height: 100%;
+  }
 }
 </style>
