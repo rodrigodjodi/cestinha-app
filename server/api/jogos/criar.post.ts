@@ -87,7 +87,7 @@ export default defineEventHandler(async (event) => {
       })
     })
 
-    const confirmadosSemTimeDefinido = [...confirmados].filter(
+    /* const confirmadosSemTimeDefinido = [...confirmados].filter(
       jogadorId => quantidadeTimesPorJogador.get(jogadorId) !== 1
     )
     if (confirmadosSemTimeDefinido.length) {
@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'jogadores-sem-time',
         message: 'Há jogadores confirmados sem Time definido no Dia.',
       })
-    }
+    } */
 
     const banco = timesDia
       .flat()
