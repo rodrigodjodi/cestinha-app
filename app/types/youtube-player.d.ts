@@ -10,7 +10,7 @@ declare module 'youtube-player' {
     ) => Promise<void>
     setPlaybackRate: (velocidade: number) => Promise<void>
     on: (
-      evento: 'ready' | 'playbackRateChange',
+      evento: 'ready' | 'playbackRateChange' | 'stateChange',
       callback: (event: { data: number }) => void
     ) => void
   }

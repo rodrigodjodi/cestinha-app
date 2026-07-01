@@ -8,6 +8,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   ready: []
   playbackRateChange: [rate: number]
+  stateChange: [state: number]
 }>()
 
 const playerRef = useTemplateRef('player')
@@ -123,6 +124,10 @@ onMounted(() => {
     const rate = typeof event.data === 'number' ? event.data : 1
     velocidadeAtual.value = rate
     emit('playbackRateChange', rate)
+  })
+
+  player.value.on('stateChange', (event) => {
+    emit('stateChange', event.data)
   })
 
   interval = window.setInterval(async () => {

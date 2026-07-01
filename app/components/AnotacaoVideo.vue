@@ -44,6 +44,7 @@ const {
 const youtubePlayer = ref<YoutubePlayerExposed | null>(null)
 const playerPronto = ref(false)
 const velocidadeVideo = ref(1)
+const videoPausado = ref(false)
 const anotacaoPendente = ref<AnotacaoPendente | null>(null)
 const modalAnotacaoAberto = ref(false)
 const enviandoAnotacao = ref(false)
@@ -88,6 +89,12 @@ const tempoRestanteNoTempoAtual = computed(() =>
   formatarTempoRestantePlacar(props.jogo.timer.duracao, tempoJogoAtualMs.value)
 )
 const labelVelocidadeVideo = computed(() => `${velocidadeVideo.value}x`)
+const exibirBotoesAnotacao = computed(() =>
+  podeAnotar.value
+  && playerPronto.value
+  && videoPausado.value
+  && !modalAnotacaoAberto.value
+)
 
 const candidatosAssistencia = computed(() => {
   const pendente = anotacaoPendente.value
@@ -131,6 +138,7 @@ async function iniciarAnotacaoVideo(
 
     try {
       await youtubePlayer.value.pausar()
+      videoPausado.value = true
     } catch (error) {
       console.error('Não foi possível pausar o vídeo:', error)
       toast.add({
@@ -201,6 +209,10 @@ function atualizarVelocidadeVideo(rate: number) {
   velocidadeVideo.value = rate
 }
 
+function atualizarEstadoVideo(state: number) {
+  videoPausado.value = state === 2
+}
+
 function marcarPlayerPronto() {
   playerPronto.value = true
   velocidadeVideo.value = youtubePlayer.value?.getPlaybackRate() ?? 1
@@ -244,6 +256,7 @@ defineShortcuts({
 watch(youtubeId, () => {
   playerPronto.value = false
   velocidadeVideo.value = 1
+  videoPausado.value = false
 })
 </script>
 
@@ -272,7 +285,39 @@ watch(youtubeId, () => {
           :youtube-id="youtubeId"
           @ready="marcarPlayerPronto"
           @playback-rate-change="atualizarVelocidadeVideo"
+          @state-change="atualizarEstadoVideo"
         />
+
+        <div
+          v-if="exibirBotoesAnotacao"
+          class="anotacao-overlay"
+        >
+          <div class="anotacao-overlay-column anotacao-overlay-column-left">
+            <ItemJogadorSelecao
+              v-for="jogador in equipeEsquerda"
+              :key="jogador.id"
+              :jogador="jogador"
+              subtitulo=""
+              :disabled="!youtubeId"
+              :selected="jogador.id === anotacaoPendente?.jogadorId"
+              class="jogador-overlay-button"
+              @toggle="iniciarAnotacaoVideo(jogador.id, 'esquerda')"
+            />
+          </div>
+
+          <div class="anotacao-overlay-column anotacao-overlay-column-right">
+            <ItemJogadorSelecao
+              v-for="jogador in equipeDireita"
+              :key="jogador.id"
+              :jogador="jogador"
+              subtitulo=""
+              :disabled="!youtubeId"
+              :selected="jogador.id === anotacaoPendente?.jogadorId"
+              class="jogador-overlay-button"
+              @toggle="iniciarAnotacaoVideo(jogador.id, 'direita')"
+            />
+          </div>
+        </div>
       </div>
       <UAlert
         v-else
@@ -333,10 +378,49 @@ watch(youtubeId, () => {
 }
 
 .video-frame {
+  position: relative;
   aspect-ratio: 16 / 9;
   width: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+.anotacao-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+}
+
+.anotacao-overlay-column {
+  pointer-events: auto;
+  display: flex;
+  max-height: 100%;
+  width: min(14rem, 34%);
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  overflow-y: auto;
+}
+
+.anotacao-overlay-column-left {
+  align-items: flex-start;
+}
+
+.anotacao-overlay-column-right {
+  align-items: flex-end;
+}
+
+.jogador-overlay-button {
+  width: 100%;
+  background-color: color-mix(in srgb, var(--ui-bg) 88%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-lg);
 }
 
 .jogadas-zone {
