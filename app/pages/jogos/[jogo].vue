@@ -98,7 +98,7 @@ onBeforeUnmount(() => { jogoStore.limparStore()})
       />
     </template>
     <template #live>
-      <div class="h-[calc(100vh-var(--ui-header-height)-40px)] relative">
+      <div class=" relative">
         <Scoreboard />
       </div>
     </template>

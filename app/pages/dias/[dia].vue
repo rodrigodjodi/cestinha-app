@@ -38,7 +38,7 @@ const podeEditarTimes = computed(() =>
   jogadorLogado.value?.atribuicao === 'admin'
 )
 const edicaoDiaBloqueada = computed(() =>
-  jogosPending.value || jogos.value.length > 0
+  jogosPending.value /* || jogos.value.length > 0 */
 )
 type AbaDia = 'jogos' | 'estatisticas' | 'presencas' | 'escalacao'
 const abasDia: AbaDia[] = ['jogos', 'estatisticas', 'presencas', 'escalacao']

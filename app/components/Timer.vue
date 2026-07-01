@@ -5,6 +5,11 @@ import { useWakeLock } from '@vueuse/core'
 const {request, release} = useWakeLock()
 const jogoStore = useJogoStore()
 const { status, iniciadoEm, pausadoEm, finalizadoEm, duracao, tempoPausadoTotalMs, jogo } = storeToRefs(jogoStore)
+const props = withDefaults(defineProps<{
+  size?: 'compact' | 'large'
+}>(), {
+  size: 'large',
+})
 const emit = defineEmits<{
   close: []
 }>()
@@ -17,7 +22,6 @@ function iniciarTicker() {
   if (interval) return
   interval = setInterval(() => {
     agora.value = Date.now()
-    console.log('tick', tempoRestante.value)
   }, 1000)
 }
 
@@ -158,6 +162,10 @@ function handleTimerClick() {
   }
 }
 
+function fecharModalNovoJogo() {
+  showNewGameModal.value = false
+}
+
 /**
  * eventos de tempo aqui: aviso de 2 minutos, countdown 10s
  */
@@ -194,34 +202,40 @@ const colorClass= computed(()=>{
       return ''
   }
 })
+const timerTextClass = computed(() => [
+  colorClass.value,
+  props.size === 'compact'
+    ? 'text-3xl sm:text-4xl leading-none'
+    : 'text-8xl lg:text-9xl leading-none',
+])
 </script>
 
 <template>
-  <div class="h-full w-full flex flex-col">
+  <div class="flex h-full w-full flex-col">
 
     <!-- TIMER -->
-    <button class="flex-1 flex items-start justify-center" @click="handleTimerClick">
-      <span class="text-[100px] font-bold cursor-pointer leading-20" :class="colorClass">
+    <button class="flex flex-1 items-center justify-center" @click="handleTimerClick">
+      <span class="cursor-pointer font-bold tabular-nums" :class="timerTextClass">
         {{ tempoFormatado }}
       </span>
     </button>
 
     <!-- ACTIONS -->
     <div v-if="status === 'pausado'" class="flex items-center justify-center gap-2 pb-3">
-      <button class="border rounded px-3 py-1" @click="reiniciar">
+      <UButton color="neutral" variant="outline" icon="i-lucide-rotate-ccw" @click="reiniciar">
         Reiniciar
-      </button>
+      </UButton>
 
-      <button class="border rounded px-3 py-1" @click="finalizar">
+      <UButton color="neutral" variant="outline" icon="i-lucide-flag" @click="finalizar">
         Finalizar
-      </button>
+      </UButton>
     </div>
     <UModal v-model:open="showNewGameModal">
       <template #content>
         <div class="p-4">
           <h2 class="text-2xl font-bold mb-4">Jogo finalizado, o que deseja fazer?</h2>
           <div class="flex justify-between mt-8">
-            <UButton class="px-8 py-16" @click="showNewGameModal = false" size="xl" color="neutral">
+            <UButton class="px-8 py-16" size="xl" color="neutral" @click="fecharModalNovoJogo">
               Fechar placar
             </UButton>
             <UButton class="px-8 py-4" @click="novoJogo" size="xl">
