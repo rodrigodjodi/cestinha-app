@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { Jogada } from '~/schemas/jogada.schema';
+import type { Jogada } from '~/schemas/jogada.schema'
 import { formatarTempoRestantePlacar } from '~/utils/formatarTempoPlacar'
+
 const emit = defineEmits<{
   selecionarTempo: [tempoMs: number]
 }>()
@@ -11,8 +12,11 @@ const toast = useToast()
 const { jogo, jogadas, jogadoresMap } = storeToRefs(jogoStore)
 const jogadaSelecionada = ref<Jogada | null>(null)
 const modalAcoesAberto = ref(false)
+const modoModal = ref<'acoes' | 'ajustar-tempo' | 'aplicar-offset'>('acoes')
 const confirmandoExclusao = ref(false)
 const excluindoJogada = ref(false)
+const tempoAjustadoMs = ref(0)
+const salvandoTempo = ref(false)
 
 const podeAnotar = computed(() =>
   Boolean(
@@ -23,6 +27,25 @@ const podeAnotar = computed(() =>
 const jogadasOrdenadas = computed(() =>
   [...jogadas.value].sort((a, b) => b.tempoMs - a.tempoMs)
 )
+const duracaoMs = computed(() =>
+  Math.max(0, (jogo.value?.timer.duracao ?? 0) * 1000)
+)
+const temMaisDeUmaJogada = computed(() => jogadas.value.length > 1)
+const tempoAtualComOffsetMs = computed(() =>
+  limitarTempoMs(
+    (jogadaSelecionada.value?.tempoMs ?? 0)
+    - (jogo.value?.video.offsetMs ?? 0)
+  )
+)
+const deltaOffsetMs = computed(() =>
+  tempoAtualComOffsetMs.value - (jogadaSelecionada.value?.tempoMs ?? 0)
+)
+const tituloModal = computed(() => {
+  if (modoModal.value === 'ajustar-tempo') return 'Ajustar tempo'
+  if (modoModal.value === 'aplicar-offset') return 'Aplicar offset'
+
+  return 'Ações da jogada'
+})
 
 function resolverJogadorNome(jogadorId: string) {
   return jogadoresMap.value.get(jogadorId)?.nome ?? 'Jogador'
@@ -50,6 +73,112 @@ function selecionarJogada(jogada: Jogada) {
 
   if (podeAnotar.value) {
     modalAcoesAberto.value = true
+  }
+}
+
+function limitarTempoMs(tempoMs: number) {
+  if (duracaoMs.value <= 0) {
+    return Math.max(0, tempoMs)
+  }
+
+  return Math.min(duracaoMs.value, Math.max(0, tempoMs))
+}
+
+function formatarTempoJogo(tempoMs: number) {
+  return formatarTempoRestantePlacar(jogo.value?.timer.duracao ?? 0, tempoMs)
+}
+
+function formatarDeltaMs(deltaMs: number) {
+  const sinal = deltaMs > 0 ? '+' : ''
+  return `${sinal}${(deltaMs / 1000).toFixed(1)}s`
+}
+
+function abrirAjusteTempo() {
+  if (!jogadaSelecionada.value) return
+
+  confirmandoExclusao.value = false
+  tempoAjustadoMs.value = jogadaSelecionada.value.tempoMs
+  modoModal.value = 'ajustar-tempo'
+}
+
+function voltarParaAcoes() {
+  modoModal.value = 'acoes'
+  confirmandoExclusao.value = false
+}
+
+function ajustarTempo(deltaMs: number) {
+  tempoAjustadoMs.value = limitarTempoMs(tempoAjustadoMs.value + deltaMs)
+}
+
+async function salvarTempoAjustado() {
+  if (!jogadaSelecionada.value || salvandoTempo.value) return
+
+  salvandoTempo.value = true
+  try {
+    await jogoStore.ajustarTempoJogada(jogadaSelecionada.value.id, {
+      tempoMs: tempoAjustadoMs.value,
+    })
+    emit('selecionarTempo', tempoAjustadoMs.value)
+    modalAcoesAberto.value = false
+    toast.add({
+      title: 'Tempo ajustado',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Não foi possível ajustar o tempo da jogada:', error)
+    toast.add({
+      title: 'Não foi possível ajustar o tempo',
+      color: 'error',
+    })
+  } finally {
+    salvandoTempo.value = false
+  }
+}
+
+async function abrirUsoOffset() {
+  if (!jogadaSelecionada.value) return
+
+  confirmandoExclusao.value = false
+  tempoAjustadoMs.value = tempoAtualComOffsetMs.value
+
+  if (temMaisDeUmaJogada.value) {
+    modoModal.value = 'aplicar-offset'
+    return
+  }
+
+  await aplicarOffsetNaJogada()
+}
+
+async function aplicarOffsetNaJogada() {
+  if (!jogadaSelecionada.value || salvandoTempo.value) return
+
+  tempoAjustadoMs.value = tempoAtualComOffsetMs.value
+  await salvarTempoAjustado()
+}
+
+async function aplicarOffsetEmTodas() {
+  if (!jogadaSelecionada.value || salvandoTempo.value) return
+
+  salvandoTempo.value = true
+  try {
+    await jogoStore.deslocarJogadas({
+      deltaMs: deltaOffsetMs.value,
+    })
+    emit('selecionarTempo', tempoAtualComOffsetMs.value)
+    modalAcoesAberto.value = false
+    toast.add({
+      title: 'Offset aplicado',
+      description: `${jogadas.value.length} jogadas ajustadas em ${formatarDeltaMs(deltaOffsetMs.value)}.`,
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Não foi possível aplicar o offset nas jogadas:', error)
+    toast.add({
+      title: 'Não foi possível aplicar o offset',
+      color: 'error',
+    })
+  } finally {
+    salvandoTempo.value = false
   }
 }
 
@@ -82,12 +211,15 @@ async function excluirJogadaSelecionada() {
 
 function limparModalAcoes() {
   jogadaSelecionada.value = null
+  modoModal.value = 'acoes'
   confirmandoExclusao.value = false
   excluindoJogada.value = false
+  salvandoTempo.value = false
+  tempoAjustadoMs.value = 0
 }
 
 function textoJogada(jogada: Jogada) {
-  return `${formatarTempoRestantePlacar(jogo.value?.timer.duracao ?? 0, jogada.tempoMs)} - ${usarTemplateTexto(jogada)}`
+  return `${formatarTempoJogo(jogada.tempoMs)} - ${usarTemplateTexto(jogada)}`
 }
 </script>
 
@@ -108,11 +240,11 @@ function textoJogada(jogada: Jogada) {
 
     <UModal v-model:open="modalAcoesAberto" @after:leave="limparModalAcoes">
       <template #header>
-        <h2 class="font-semibold">Ações da jogada</h2>
+        <h2 class="font-semibold">{{ tituloModal }}</h2>
       </template>
 
       <template #body>
-        <div class="space-y-3">
+        <div v-if="modoModal === 'acoes'" class="space-y-3">
           <p class="text-sm text-muted">
             {{ jogadaSelecionada ? textoJogada(jogadaSelecionada) : '' }}
           </p>
@@ -122,6 +254,7 @@ function textoJogada(jogada: Jogada) {
             color="neutral"
             variant="soft"
             icon="i-lucide-clock"
+            @click="abrirAjusteTempo"
           >
             Ajustar tempo
           </UButton>
@@ -136,10 +269,140 @@ function textoJogada(jogada: Jogada) {
             {{ confirmandoExclusao ? 'Confirma exclusão?' : 'Excluir jogada' }}
           </UButton>
         </div>
+
+        <div v-else-if="modoModal === 'ajustar-tempo'" class="space-y-4">
+          <div class="space-y-1">
+            <p class="text-sm text-muted">
+              {{ jogadaSelecionada ? usarTemplateTexto(jogadaSelecionada) : '' }}
+            </p>
+            <p class="text-2xl font-semibold tabular-nums text-highlighted">
+              {{ formatarTempoJogo(tempoAjustadoMs) }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2">
+            <UButton
+              block
+              color="neutral"
+              variant="soft"
+              @click="ajustarTempo(-5000)"
+            >
+              -5s
+            </UButton>
+            <UButton
+              block
+              color="neutral"
+              variant="soft"
+              @click="ajustarTempo(-1000)"
+            >
+              -1s
+            </UButton>
+            <UButton
+              block
+              color="neutral"
+              variant="soft"
+              @click="ajustarTempo(1000)"
+            >
+              +1s
+            </UButton>
+            <UButton
+              block
+              color="neutral"
+              variant="soft"
+              @click="ajustarTempo(5000)"
+            >
+              +5s
+            </UButton>
+          </div>
+
+          <UButton
+            block
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-timer"
+            :loading="salvandoTempo"
+            @click="abrirUsoOffset"
+          >
+            Usar offset
+          </UButton>
+
+          <div class="flex gap-2">
+            <UButton
+              block
+              color="neutral"
+              variant="ghost"
+              :disabled="salvandoTempo"
+              @click="voltarParaAcoes"
+            >
+              Cancelar
+            </UButton>
+            <UButton
+              block
+              color="primary"
+              icon="i-lucide-save"
+              :loading="salvandoTempo"
+              @click="salvarTempoAjustado"
+            >
+              Salvar tempo
+            </UButton>
+          </div>
+        </div>
+
+        <div v-else class="space-y-4">
+          <div class="space-y-2">
+            <p class="text-sm text-muted">
+              O offset atual muda esta jogada em {{ formatarDeltaMs(deltaOffsetMs) }}.
+            </p>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <p class="text-muted">Atual</p>
+                <p class="font-semibold tabular-nums">
+                  {{ formatarTempoJogo(jogadaSelecionada?.tempoMs ?? 0) }}
+                </p>
+              </div>
+              <div>
+                <p class="text-muted">Com offset</p>
+                <p class="font-semibold tabular-nums">
+                  {{ formatarTempoJogo(tempoAtualComOffsetMs) }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <UButton
+            block
+            color="neutral"
+            variant="soft"
+            icon="i-lucide-crosshair"
+            :loading="salvandoTempo"
+            @click="aplicarOffsetNaJogada"
+          >
+            Aplicar só nesta
+          </UButton>
+
+          <UButton
+            block
+            color="primary"
+            icon="i-lucide-list-checks"
+            :loading="salvandoTempo"
+            @click="aplicarOffsetEmTodas"
+          >
+            Aplicar em todas
+          </UButton>
+
+          <UButton
+            block
+            color="neutral"
+            variant="ghost"
+            :disabled="salvandoTempo"
+            @click="abrirAjusteTempo"
+          >
+            Voltar
+          </UButton>
+        </div>
       </template>
     </UModal>
   </div>
 </template>
-
 
 <style scoped></style>

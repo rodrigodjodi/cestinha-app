@@ -29,6 +29,14 @@ export const criarJogadaInputSchema = z.object({
   }
 })
 
+export const ajustarTempoJogadaInputSchema = z.object({
+  tempoMs: z.number().int().nonnegative(),
+}).strict()
+
+export const deslocarJogadasInputSchema = z.object({
+  deltaMs: z.number().int(),
+}).strict()
+
 export const baseJogadaSchema = z.object({
   diaId: z.string().min(1),
   jogoId: z.string().min(1),
@@ -65,10 +73,22 @@ export const jogadaSchema = baseJogadaSchema.safeExtend({
 })
 
 export type CriarJogadaInput = z.infer<typeof criarJogadaInputSchema>
+export type AjustarTempoJogadaInput = z.infer<typeof ajustarTempoJogadaInputSchema>
+export type DeslocarJogadasInput = z.infer<typeof deslocarJogadasInputSchema>
 export type BaseJogada = z.infer<typeof baseJogadaSchema>;
 export type Jogada = z.infer<typeof jogadaSchema>;
 export type TipoJogada = z.infer<typeof tipoJogadaSchema>;
 export type CriarJogadaResponse = {
   jogadaId: string
   criada: true
+}
+export type AjustarTempoJogadaResponse = {
+  sucesso: true
+  jogadaId: string
+  tempoMs: number
+}
+export type DeslocarJogadasResponse = {
+  sucesso: true
+  total: number
+  deltaMs: number
 }

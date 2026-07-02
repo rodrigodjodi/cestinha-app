@@ -2,8 +2,12 @@ import type { Jogo } from '@/schemas/jogo.schema'
 import type { Jogador } from '@/schemas/jogador.schema'
 import type { EquipeJogo } from '@/schemas/equipe.schema'
 import type {
+  AjustarTempoJogadaInput,
+  AjustarTempoJogadaResponse,
   CriarJogadaInput,
   CriarJogadaResponse,
+  DeslocarJogadasInput,
+  DeslocarJogadasResponse,
   Jogada,
 } from '@/schemas/jogada.schema'
 import { updateDoc, doc, serverTimestamp, increment } from 'firebase/firestore'
@@ -156,6 +160,34 @@ export const useJogoStore = defineStore('jogo', () => {
       { method: 'DELETE' }
     )
   }
+
+  function ajustarTempoJogada(jogadaId: string, input: AjustarTempoJogadaInput) {
+    if (!jogo.value) {
+      throw new Error('Jogo não definido')
+    }
+
+    return apiFetch<AjustarTempoJogadaResponse>(
+      `/api/jogos/${jogo.value.id}/jogadas/${jogadaId}`,
+      {
+        method: 'PATCH',
+        body: input,
+      }
+    )
+  }
+
+  function deslocarJogadas(input: DeslocarJogadasInput) {
+    if (!jogo.value) {
+      throw new Error('Jogo não definido')
+    }
+
+    return apiFetch<DeslocarJogadasResponse>(
+      `/api/jogos/${jogo.value.id}/jogadas`,
+      {
+        method: 'PATCH',
+        body: input,
+      }
+    )
+  }
   
   return {
     jogo,
@@ -188,6 +220,8 @@ export const useJogoStore = defineStore('jogo', () => {
     definirOffsetMs,
     anotarJogada,
     excluirJogada,
+    ajustarTempoJogada,
+    deslocarJogadas,
     resolverJogadores,
   }
 })
