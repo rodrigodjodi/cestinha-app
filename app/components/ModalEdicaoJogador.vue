@@ -33,9 +33,7 @@ const items = computed(() => [
       <UAvatar :alt="jogador?.nome" :src="jogador?.fotoUrl" size="lg" />
       <h2>{{ jogador?.nome }}</h2>
     </template>
-    <template #body>
-      <UButton>Upload de foto</UButton>
-    </template>
+    
     <template #footer>
       <URadioGroup class="mt-2" :modelValue="jogador?.atribuicao" orientation="horizontal" variant="list" :items="items"
         :disabled="jogadorLogado?.atribuicao !== 'admin'"
