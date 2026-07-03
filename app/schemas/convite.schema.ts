@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 export const baseConviteSchema = z.object({
   grupoId: z.string().min(1),
+  grupoNome: z.string().min(2).optional(),
 })
 
 export const conviteSchema = baseConviteSchema.extend({

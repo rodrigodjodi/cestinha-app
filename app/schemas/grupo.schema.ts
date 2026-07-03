@@ -7,6 +7,7 @@ export const grupoSchema = baseGrupoSchema.extend({
   criadoPor: z.string().min(1),
   usuarios: z.array(z.string().min(1)).min(1),
   adminUids: z.array(z.string().min(1)).default([]),
+  conviteId: z.string().min(1).optional(),
   id: z.string().min(1)
 })
 export const criacaoGrupoSchema = baseGrupoSchema.extend({

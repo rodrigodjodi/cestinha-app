@@ -20,15 +20,16 @@ export function useValidacaoConvite(
     return data.value?.valid ? data.value.convite : null
   })
   const grupoId = computed(() => convite.value?.grupoId)
-  const {
-    grupo,
-    pending: grupoPending,
-    error: grupoError,
-  } = useGrupo(grupoId)
-  const pending = computed(() => {
-    return convitePending.value || (!!grupoId.value && grupoPending.value)
+  const grupo = computed(() => {
+    if (!convite.value) return null
+
+    return {
+      id: convite.value.grupoId,
+      nome: convite.value.grupoNome ?? 'grupo',
+    }
   })
-  const error = computed(() => conviteError.value ?? grupoError.value)
+  const pending = computed(() => convitePending.value)
+  const error = computed(() => conviteError.value)
   const notFound = computed(() => {
     return !pending.value && !error.value && (!convite.value || !grupo.value)
   })

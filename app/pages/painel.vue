@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import {useClipboard} from '@vueuse/core'
 // middleware
 definePageMeta({middleware: ['auth']})
 // composables
@@ -8,12 +7,7 @@ const pageTitle = useState<string>('pageTitle', () => 'Painel')
 useHead({ title: pageTitle }) // esse título para a aba do navegador: Titulo - Cestinha
 // estado
 const { grupos, pending, errosParseGrupo } = useGruposUsuario()
-
-
-
-
 const mostrarModalCriarGrupo = ref(false)
-const {  copy, copied } = useClipboard()
 </script>
 
 <template>
@@ -48,27 +42,11 @@ const {  copy, copied } = useClipboard()
     </div>
 
     <div v-else class="grid gap-4 md:grid-cols-2">
-      <UCard v-for="grupo in grupos" :key="grupo?.id"
-        class=" hover:shadow-lg transition"
-        >
-        <template #header>
-          <NuxtLink as="h2" class="font-semibold text-lg hover:text-info-500"
-            :to="`/grupos/${grupo?.id}`">
-            {{ grupo?.nome }}
-          </NuxtLink>
-        </template>
-
-        <p class="text-sm text-gray-500">
-          {{ grupo?.usuarios.length }} participante(s)
-        </p>
-        <!-- <p>Link de convite:</p>
-        <span class="text-info-300">
-          {{`https://cestinha.app.br/convites/${grupo?.convite}`}}
-        </span>
-        <UButton :icon="copied ? 'i-lucide-check' : 'i-lucide-copy'" size="sm" color="info" variant="solid"
-          class="ml-4" @click="copy(`https://cestinha.app.br/convites/${grupo?.convite}`)"
-          title="Copiar"/> -->
-      </UCard>
+      <CardGrupoPainel
+        v-for="grupo in grupos"
+        :key="grupo.id"
+        :grupo="grupo"
+      />
     </div>
   </UContainer>
 </template>

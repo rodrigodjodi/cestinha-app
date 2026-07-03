@@ -32,6 +32,7 @@ export default defineEventHandler(async (event) => {
     nome: payloadGrupo.nome,
     usuarios: [user.uid],
     adminUids: [user.uid],
+    conviteId: conviteRef.id,
     criadoPor: user.uid,
     criadoEm: now,
   })
@@ -49,6 +50,7 @@ export default defineEventHandler(async (event) => {
 
   const convite = baseConviteSchema.parse({
     grupoId: grupoRef.id,
+    grupoNome: payloadGrupo.nome,
   })
   batch.set(conviteRef, {
     ...convite,

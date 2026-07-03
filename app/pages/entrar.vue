@@ -13,15 +13,15 @@ const route = useRoute()
     <p v-if="carregando">Caregando...</p>
     <UCard>
       <template #header>
-        <h2 class="text-xl font-bold">Entrar</h2>
+        <h2 class="text-xl font-bold ">Entrar</h2>
       </template>
 
       <UForm :state="loginFormState" :schema="loginSchema" @submit.prevent="entrar" @error="handleFormError">
-        <UFormField label="Email" name="email" class="mb-4" :error="serverErrors.email">
-          <UInput v-model="loginFormState.email"  />
+        <UFormField label="Email" name="email" class="mb-4 w-full" :error="serverErrors.email" >
+          <UInput v-model="loginFormState.email" type="email" />
         </UFormField>
 
-        <UFormField label="Senha" name="senha" class="mb-6" :error="serverErrors.senha">
+        <UFormField label="Senha" name="senha" class="mb-6 " :error="serverErrors.senha">
           <UInput v-model="loginFormState.senha" type="password"   />
         </UFormField>
 
