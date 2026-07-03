@@ -28,7 +28,7 @@ export function useGruposUsuario() {
         return {doc: doc.raw, erroValidacao: doc.error }
       })
   })
-  const stopWatchNetworkError = watch(error, (err) => {
+  /* const stopWatchNetworkError = watch(error, (err) => {
     if (err) {
       console.error('Erro ao carregar grupos do usuário:', err)
       useToast().add({
@@ -43,7 +43,7 @@ export function useGruposUsuario() {
     if (erros.length > 0) {
       console.warn('Foram encontrados erros de conversão ao carregar grupos do usuário:', erros)
     }
-  })
-  onBeforeUnmount(() => {stopWatchNetworkError();stopWatchErrosParse()})
+  }) 
+  onBeforeUnmount(() => {stopWatchNetworkError();stopWatchErrosParse()})*/
   return { grupos, pending, error, errosParseGrupo }
 }
