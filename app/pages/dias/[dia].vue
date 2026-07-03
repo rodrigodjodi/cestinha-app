@@ -31,6 +31,11 @@ const {
   pending: jogosPending,
   error: jogosError,
 } = useListaJogosDiasGrupo(diaId, grupoId)
+const {
+  jogadas: jogadasDia,
+  pending: jogadasPending,
+  error: jogadasError,
+} = useListaJogadasDia(diaId)
 const jogadorLogado = computed(() => {
   return jogadores.value.find(el => el.usuarioId === user.value?.uid)
 })
@@ -131,7 +136,13 @@ watch(abaAtiva, value => {
     </template>
 
     <template #estatisticas>
-      <div />
+      <CardResultadoDia
+        :jogadores="jogadores"
+        :jogadas="jogadasDia"
+        :jogos="jogos"
+        :pending="jogosPending || jogadasPending"
+        :error="jogosError || jogadasError"
+      />
     </template>
   </UTabs>
 </template>
