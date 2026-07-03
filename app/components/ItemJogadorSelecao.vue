@@ -27,7 +27,7 @@ defineEmits<{
     <div class="flex  items-center gap-3">
       <UCheckbox :model-value="selected" hidden/>
 
-      <UAvatar :alt="jogador.nome" />
+      <UAvatar :alt="jogador.nome" :chip="Boolean(jogador.usuarioId)"/>
 
       <div class="min-w-0 text-left">
         <p class="truncate font-medium">
