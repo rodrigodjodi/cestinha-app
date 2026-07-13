@@ -64,12 +64,6 @@ export default defineEventHandler(async (event) => {
         message: 'O jogador não é membro do grupo.',
       })
     }
-    if (!jogosDiaSnapshot.empty) {
-      throw createError({
-        statusCode: 409,
-        statusMessage: 'dia-com-jogos',
-      })
-    }
 
     let criadoPor = payload.jogadorId
     if (jogador.usuarioId !== decodedToken.uid) {
