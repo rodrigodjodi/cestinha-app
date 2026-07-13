@@ -1,5 +1,8 @@
 <script setup lang="ts">
-defineProps<{
+import type { Jogo } from '~/schemas/jogo.schema'
+
+const props = defineProps<{
+  jogo: Jogo
   velocidadeLabel?: string
   velocidadeDisabled?: boolean
 }>()
@@ -11,12 +14,15 @@ const emit = defineEmits<{
 
 const { tempoVideoMs } = useVideoAnotacao()
 const jogoStore = useJogoStore()
-const { jogadas, jogo, offsetMs } = storeToRefs(jogoStore)
+const { jogadas } = storeToRefs(jogoStore)
 const { definirOffsetMs } = jogoStore
 const offsetLoading = ref(false)
 
+const offsetMs = computed(() => props.jogo.video.offsetMs ?? 0)
+const offsetDefinido = computed(() => offsetMs.value !== 0)
+
 const duracaoMs = computed(() =>
-  Math.max(1, (jogo.value?.timer.duracao ?? 0) * 1000)
+  Math.max(1, (props.jogo.timer.duracao ?? 0) * 1000)
 )
 const cestas = computed(() =>
   jogadas.value.filter(jogada => ['2PM', '3PM'].includes(jogada.tipo))
@@ -75,10 +81,10 @@ defineShortcuts({
     <UTooltip arrow text="Definir inicio" :kbds="['i']">
       <UButton
         size="xl"
-        class="min-h-16 min-w-16"
+        class="min-h-16 min-w-16 justify-center"
         icon="i-lucide-timer"
-        color="neutral"
-        variant="soft"
+        :color="offsetDefinido ? 'success' : 'error'"
+        variant="outline"
         :loading="offsetLoading"
         @click="setOffset"
       />

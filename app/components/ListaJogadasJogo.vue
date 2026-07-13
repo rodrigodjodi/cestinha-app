@@ -9,7 +9,7 @@ const emit = defineEmits<{
 const jogoStore = useJogoStore()
 const user = useCurrentUser()
 const toast = useToast()
-const { jogo, jogadas, jogadoresMap } = storeToRefs(jogoStore)
+const { jogo, jogadas, jogadores, jogadoresMap } = storeToRefs(jogoStore)
 const jogadaSelecionada = ref<Jogada | null>(null)
 const modalAcoesAberto = ref(false)
 const modoModal = ref<'acoes' | 'ajustar-tempo' | 'aplicar-offset'>('acoes')
@@ -17,6 +17,7 @@ const confirmandoExclusao = ref(false)
 const excluindoJogada = ref(false)
 const tempoAjustadoMs = ref(0)
 const salvandoTempo = ref(false)
+const alterandoAnotador = ref(false)
 
 const podeAnotar = computed(() =>
   Boolean(
@@ -24,6 +25,13 @@ const podeAnotar = computed(() =>
     && jogo.value.anotadorId === user.value?.uid
   )
 )
+const nomeAnotador = computed(() => {
+  const anotadorId = jogo.value?.anotadorId
+  if (!anotadorId) return null
+
+  return jogadores.value.find(jogador => jogador.usuarioId === anotadorId)?.nome
+    ?? 'Anotador'
+})
 const jogadasOrdenadas = computed(() =>
   [...jogadas.value].sort((a, b) => b.tempoMs - a.tempoMs)
 )
@@ -209,6 +217,48 @@ async function excluirJogadaSelecionada() {
   }
 }
 
+async function assumirAnotacao() {
+  if (!user.value || alterandoAnotador.value) return
+
+  alterandoAnotador.value = true
+  try {
+    await jogoStore.atribuirAnotacao(user.value.uid)
+    toast.add({
+      title: 'Anotação assumida',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Não foi possível assumir a anotação:', error)
+    toast.add({
+      title: 'Não foi possível assumir a anotação',
+      color: 'error',
+    })
+  } finally {
+    alterandoAnotador.value = false
+  }
+}
+
+async function liberarAnotacao() {
+  if (alterandoAnotador.value) return
+
+  alterandoAnotador.value = true
+  try {
+    await jogoStore.atribuirAnotacao(undefined)
+    toast.add({
+      title: 'Anotação liberada',
+      color: 'success',
+    })
+  } catch (error) {
+    console.error('Não foi possível liberar a anotação:', error)
+    toast.add({
+      title: 'Não foi possível liberar a anotação',
+      color: 'error',
+    })
+  } finally {
+    alterandoAnotador.value = false
+  }
+}
+
 function limparModalAcoes() {
   jogadaSelecionada.value = null
   modoModal.value = 'acoes'
@@ -225,7 +275,38 @@ function textoJogada(jogada: Jogada) {
 
 <template>
   <div>
-    <h1>Lista Jogadas</h1>
+    <div class="flex items-center justify-between gap-2 border-b border-default px-2 py-3">
+      <h1 class="text-base font-semibold text-highlighted">Lista Jogadas</h1>
+
+      <div class="flex items-center gap-2 text-sm">
+        <template v-if="jogo?.anotadorId">
+          <span class="text-muted">
+            Anotação: <span class="font-medium text-default">{{ nomeAnotador }}</span>
+          </span>
+          <UButton
+            v-if="podeAnotar"
+            icon="i-lucide-x"
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            aria-label="Liberar anotação"
+            :loading="alterandoAnotador"
+            @click="liberarAnotacao"
+          />
+        </template>
+        <UButton
+          v-else
+          size="xs"
+          color="primary"
+          variant="soft"
+          :loading="alterandoAnotador"
+          @click="assumirAnotacao"
+        >
+          Assumir anotação
+        </UButton>
+      </div>
+    </div>
+
     <ul class="divide-y divide-default">
       <li v-for="jogada in jogadasOrdenadas" :key="jogada.id">
         <button

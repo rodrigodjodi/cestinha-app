@@ -331,6 +331,7 @@ watch(youtubeId, () => {
       <ControlesVideo
         v-if="youtubeId"
         class="timeline-row"
+        :jogo="props.jogo"
         :velocidade-label="labelVelocidadeVideo"
         :velocidade-disabled="!playerPronto"
         @alternar-velocidade="alternarVelocidadeVideo"
