@@ -11,3 +11,16 @@ export function apagarJogo({ jogoId, grupoId }: ApagarJogoParams) {
     body: { grupoId },
   })
 }
+
+export type RenomearJogoParams = {
+  jogoId: string
+  grupoId: string
+  nome: string
+}
+
+export function renomearJogo({ jogoId, grupoId, nome }: RenomearJogoParams) {
+  return apiFetch<{ sucesso: true }>(`/api/jogos/${jogoId}`, {
+    method: 'PATCH',
+    body: { grupoId, nome },
+  })
+}
